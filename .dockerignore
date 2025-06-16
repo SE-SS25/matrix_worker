@@ -1,0 +1,9 @@
+.git/
+.idea/
+docker/
+target/
+.dockerignore
+*env*
+.gitignore
+justfile
+rustfmt.toml

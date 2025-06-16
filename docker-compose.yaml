@@ -1,0 +1,71 @@
+services:
+  matrix:
+    build:
+      context: .
+      dockerfile: docker/lord/debug/Dockerfile
+      # dockerfile: ./docker/lord/release/Dockerfile
+    container_name: matrix-lord
+    restart: unless-stopped
+    env_file:
+      - docker/lord/.env
+    ports:
+      - "8080:8080"
+    networks:
+      - matrix-kingdom
+    depends_on:
+      postgres:
+        condition: service_started
+      mongo:
+        condition: service_started
+
+  postgres:
+    image: postgres
+    container_name: matrix-pg
+    restart: unless-stopped
+    env_file:
+      - docker/lord/.env
+    volumes:
+      - matrix-pg_db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - matrix-kingdom
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER:-username} -d ${POSTGRES_DB:-db}'" ]
+
+  mongo:
+    image: mongo
+    container_name: matrix-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - matrix-mongo_db:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - matrix-kingdom
+
+  mongo-express:
+    image: mongo-express
+    container_name: matrix-mongo_express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+    ports:
+      - "8081:8081"
+    networks:
+      - matrix-kingdom
+
+
+networks:
+  matrix-kingdom:
+    name: matrix-kingdom
+
+volumes:
+  matrix-pg_db:
+  matrix-mongo_db:
