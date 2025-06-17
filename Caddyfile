@@ -1,5 +1,7 @@
 :80 {
 	reverse_proxy :8080 :8081 :8082 :8083 :8084 :8085 :8086 :8087 :8088 :8089 {
 		lb_policy round_robin
+		health_uri /version
+		health_interval 10s
 	}
 }
