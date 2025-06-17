@@ -4,14 +4,18 @@ services:
       context: .
       dockerfile: docker/lord/debug/Dockerfile
       # dockerfile: ./docker/lord/release/Dockerfile
-    container_name: matrix-lord
+    # container_name: matrix-lord
     restart: unless-stopped
     env_file:
       - docker/lord/.env
     ports:
-      - "8080:8080"
+      - "8080-8089:8080"
     networks:
       - matrix-kingdom
+    deploy:
+      replicas: 10
+      restart_policy:
+        condition: on-failure
     depends_on:
       postgres:
         condition: service_started
@@ -57,7 +61,7 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
       ME_CONFIG_BASICAUTH: false
     ports:
-      - "8081:8081"
+      - "8090:8081"
     networks:
       - matrix-kingdom
 
