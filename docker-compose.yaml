@@ -35,7 +35,7 @@ services:
     networks:
       - matrix-kingdom
     healthcheck:
-      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER:-username} -d ${POSTGRES_DB:-db}'" ]
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U username -d db'" ]
 
   mongo:
     image: mongo
