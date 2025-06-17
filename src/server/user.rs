@@ -5,7 +5,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use bson::doc;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info, instrument, warn};
+use tracing::{error, info, instrument, trace, warn};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub(super) struct User {
@@ -30,12 +30,13 @@ pub(super) async fn add_user(
 }
 
 #[instrument(skip_all)]
-pub(super) async fn get_user(
+pub(super) async fn get_user_by_name(
     State(state): State<AppState>,
     Path(username): Path<String>,
 ) -> impl IntoResponse {
-    let users = state.client.database("test").collection("users");
-    let user: Option<User> = match users
+    let users = state.client.database("test").collection::<User>("users");
+
+    let user = match users
         .find_one(doc! {
             "name": &username,
         })
@@ -59,4 +60,39 @@ pub(super) async fn get_user(
     info!(?user, "Found user");
 
     (StatusCode::FOUND, format!("Found user: {user:?}"))
+}
+
+#[instrument(skip_all)]
+pub(super) async fn get_all_users(State(state): State<AppState>) -> impl IntoResponse {
+    let users = state.client.database("test").collection::<User>("users");
+
+    let mut user_cursor = match users.find(doc! {}).await {
+        Ok(cursor) => cursor,
+        Err(e) => {
+            error!(%e, "Failed to get all users");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Something went wrong".to_string(),
+            );
+        }
+    };
+
+    let mut users = vec![];
+
+    loop {
+        match user_cursor.advance().await {
+            Ok(true) => {}
+            Ok(false) => break,
+            Err(e) => error!(%e, "User advancing failed"),
+        }
+        match user_cursor.deserialize_current() {
+            Ok(user) => {
+                trace!(?user, "Found user");
+                users.push(user);
+            }
+            Err(e) => error!(%e, "Error deserializing"),
+        }
+    }
+
+    (StatusCode::FOUND, format!("Users: {users:?}"))
 }

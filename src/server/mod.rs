@@ -48,7 +48,8 @@ pub(crate) async fn start(db_pool: DbPool, client: Client) -> Result<()> {
         .route("/version", get(version))
         .route("/robots.txt", get(robots))
         .route("/user/create", post(user::add_user))
-        .route("/user/{name}", get(user::get_user))
+        .route("/user", get(user::get_all_users))
+        .route("/user/{name}", get(user::get_user_by_name))
         .with_state(state)
         .layer(cors);
 
