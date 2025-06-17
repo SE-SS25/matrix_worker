@@ -2,7 +2,7 @@ use crate::DbPool;
 use anyhow::{Context, Result};
 use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
-use tracing::{debug, instrument};
+use tracing::{debug, info, instrument};
 
 const DB_POOL_MAX_SIZE: u32 = 100;
 const DB_POOL_MIN_IDLE: u32 = 5;
@@ -21,6 +21,8 @@ pub(crate) async fn init() -> Result<DbPool> {
         .connect(&db_url)
         .await
         .context("Failed to connect to database")?;
+
+    info!("Connected to database");
 
     Ok(pool)
 }

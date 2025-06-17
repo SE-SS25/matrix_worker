@@ -4,6 +4,7 @@ use axum::Router;
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::response::IntoResponse;
 use axum::routing::get;
+use mongodb::Client;
 use tokio::net::TcpListener;
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
@@ -17,10 +18,11 @@ const DOCKER_SHUTDOWN_SIG_NUM: i32 = 15;
 #[derive(Debug, Clone)]
 struct State {
     db_pool: DbPool,
+    client: Client,
 }
 
 #[instrument(name = "start server", skip_all)]
-pub(crate) async fn start(db_pool: DbPool) -> Result<()> {
+pub(crate) async fn start(db_pool: DbPool, client: Client) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
     let allow_origin = allow_origin.parse::<HeaderValue>().with_context(|| {
@@ -36,7 +38,7 @@ pub(crate) async fn start(db_pool: DbPool) -> Result<()> {
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE]);
 
-    let state = State { db_pool };
+    let state = State { db_pool, client };
 
     debug!(port, ?state, "Starting server");
 

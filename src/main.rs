@@ -1,6 +1,7 @@
 #[macro_use]
 mod macros;
-mod db;
+mod mongo;
+mod pg;
 mod server;
 
 use anyhow::{Context, Result};
@@ -44,12 +45,13 @@ async fn main() -> Result<()> {
 
     info!("Starting matrix worker v{VERSION}");
 
-    let db_pool = db::init().await.context("Failed to initialize database")?;
+    let (db_pool, mongo_client) =
+        tokio::try_join!(pg::init(), mongo::init(),).context("Failed to initialize data stores")?;
 
     #[cfg(debug_assertions)]
-    db::migrate(&db_pool).await.context("Migration failed")?;
+    pg::migrate(&db_pool).await.context("Migration failed")?;
 
-    server::start(db_pool)
+    server::start(db_pool, mongo_client)
         .await
         .context("Failed to start and run HTTP server")?;
 
