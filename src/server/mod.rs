@@ -1,9 +1,11 @@
+mod user;
+
 use crate::{DbPool, VERSION};
 use anyhow::{Context, Result};
 use axum::Router;
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::response::IntoResponse;
-use axum::routing::get;
+use axum::routing::{get, post};
 use mongodb::Client;
 use tokio::net::TcpListener;
 #[cfg(unix)]
@@ -16,7 +18,7 @@ use tracing::{debug, error, info, instrument};
 const DOCKER_SHUTDOWN_SIG_NUM: i32 = 15;
 
 #[derive(Debug, Clone)]
-struct State {
+struct AppState {
     db_pool: DbPool,
     client: Client,
 }
@@ -38,13 +40,15 @@ pub(crate) async fn start(db_pool: DbPool, client: Client) -> Result<()> {
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE]);
 
-    let state = State { db_pool, client };
+    let state = AppState { db_pool, client };
 
-    debug!(port, ?state, "Starting server");
+    debug!(port, "Starting server");
 
     let app = Router::new()
         .route("/version", get(version))
         .route("/robots.txt", get(robots))
+        .route("/user/create", post(user::add_user))
+        .route("/user/{name}", get(user::get_user))
         .with_state(state)
         .layer(cors);
 
