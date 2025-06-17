@@ -42,6 +42,7 @@ pub(crate) async fn start(db_pool: DbPool) -> Result<()> {
 
     let app = Router::new()
         .route("/version", get(version))
+        .route("/robots.txt", get(robots))
         .with_state(state)
         .layer(cors);
 
@@ -93,4 +94,9 @@ async fn shutdown_signal() {
 #[instrument]
 async fn version() -> impl IntoResponse {
     (StatusCode::OK, VERSION)
+}
+
+#[instrument]
+async fn robots() -> impl IntoResponse {
+    (StatusCode::OK, "User-agent: *\nDisallow: /")
 }
