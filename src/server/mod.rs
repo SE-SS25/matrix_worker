@@ -22,7 +22,7 @@ struct State {
 #[instrument(name = "start server", skip_all)]
 pub(crate) async fn start(db_pool: DbPool) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
-    let allow_origin = get_env!("ALLOW_ORIGIN_URL");
+    let allow_origin = get_env!(ORIGIN_ENV_KEY);
     let allow_origin = allow_origin.parse::<HeaderValue>().with_context(|| {
         format!(
             "Unable to parse {ORIGIN_ENV_KEY} ({allow_origin}) \
@@ -38,7 +38,7 @@ pub(crate) async fn start(db_pool: DbPool) -> Result<()> {
 
     let state = State { db_pool };
 
-    debug!(?state, port, "Starting server");
+    debug!(port, ?state, "Starting server");
 
     let app = Router::new()
         .route("/version", get(version))

@@ -42,14 +42,16 @@ async fn main() -> Result<()> {
             .with_context(|| format!("Failed to set global default subscriber with lvl {lvl}"))?;
     }
 
-    info!("Starting matrix server v{VERSION}");
+    info!("Starting matrix worker v{VERSION}");
 
     let db_pool = db::init().await.context("Failed to initialize database")?;
 
     #[cfg(debug_assertions)]
     db::migrate(&db_pool).await.context("Migration failed")?;
 
-    server::start(db_pool).await.context("Failed to serve")?;
+    server::start(db_pool)
+        .await
+        .context("Failed to start and run HTTP server")?;
 
     Ok(())
 }
