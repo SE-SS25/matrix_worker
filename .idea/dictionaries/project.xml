@@ -4,6 +4,7 @@
       <w>adminpassword</w>
       <w>adminusername</w>
       <w>basicauth</w>
+      <w>caddyfile</w>
       <w>initdb</w>
     </words>
   </dictionary>

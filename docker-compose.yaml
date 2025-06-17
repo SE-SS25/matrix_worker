@@ -65,6 +65,24 @@ services:
     networks:
       - matrix-kingdom
 
+  caddy:
+    image: caddy:2
+    container_name: matrix-caddy
+    restart: unless-stopped
+    network_mode: host
+    #    ports:
+    #      - "80:80"
+    #      - "443:443"
+    #      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    #    networks:
+    #      - matrix-kingdom
+    depends_on:
+      - matrix
+
 
 networks:
   matrix-kingdom:
@@ -73,3 +91,5 @@ networks:
 volumes:
   matrix-pg_db:
   matrix-mongo_db:
+  caddy_data:
+  caddy_config:
