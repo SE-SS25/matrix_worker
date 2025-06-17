@@ -5,5 +5,7 @@ target/
 .dockerignore
 *env*
 .gitignore
+Caddyfile
+docker-compose.yaml
 justfile
 rustfmt.toml
