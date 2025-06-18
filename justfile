@@ -9,6 +9,9 @@ up:
 down:
     docker compose down --remove-orphans
 
+scale_count:
+    @fish -c 'docker ps --format {{{{ .Names }} | rg "\-matrix" | wc -l'
+
 scale count:
     docker compose up -d --scale matrix={{ count }}
 
