@@ -24,6 +24,7 @@ services:
 
   postgres:
     image: postgres
+    command: -c 'max_connections=1000'
     container_name: matrix-pg
     restart: unless-stopped
     env_file:
