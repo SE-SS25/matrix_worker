@@ -9,11 +9,11 @@ services:
     env_file:
       - docker/lord/.env
     ports:
-      - "8080-8089:8080"
+      - "8080-8094:8080"
     networks:
       - matrix-kingdom
     deploy:
-      replicas: 10
+      replicas: 15
       restart_policy:
         condition: on-failure
     depends_on:
