@@ -17,6 +17,8 @@ use tracing::{debug, error, info, instrument};
 #[cfg(unix)]
 const DOCKER_SHUTDOWN_SIG_NUM: i32 = 15;
 
+const INTERNAL_ERR_MSG: &str = "Internal Server Error";
+
 #[derive(Debug, Clone)]
 struct AppState {
     db_pool: DbPool,
@@ -42,7 +44,7 @@ pub(crate) async fn start(db_pool: DbPool, client: Client) -> Result<()> {
 
     let state = AppState { db_pool, client };
 
-    debug!(port, "Starting server");
+    info!(port, "Starting server");
 
     let app = Router::new()
         .route("/version", get(version))

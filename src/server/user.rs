@@ -1,4 +1,4 @@
-use crate::server::AppState;
+use crate::server::{AppState, INTERNAL_ERR_MSG};
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -17,15 +17,18 @@ pub(super) async fn add_user(
     State(state): State<AppState>,
     Json(user): Json<User>,
 ) -> impl IntoResponse {
+    let to_insert = doc! {
+        "name": &user.name,
+    };
     let users = state.client.database("test").collection("users");
-    let insert_res = match users.insert_one(user.clone()).await {
+    let insert_res = match users.insert_one(to_insert).await {
         Ok(res) => res,
         Err(e) => {
             error!(?user, %e, "Failed to insert user");
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error");
+            return (StatusCode::INTERNAL_SERVER_ERROR, INTERNAL_ERR_MSG);
         }
     };
-    info!(?insert_res, "Probably inserted user");
+    info!(inserted_id = ?insert_res.inserted_id, "Inserted user");
     (StatusCode::CREATED, "User created")
 }
 
@@ -37,9 +40,11 @@ pub(super) async fn get_user_by_name(
     let users = state.client.database("test").collection::<User>("users");
 
     let user = match users
-        .find_one(doc! {
-            "name": &username,
-        })
+        .find_one(
+            doc! { // NOTE: This seems to always get the first matching entry
+                "name": &username,
+            },
+        )
         .await
     {
         Ok(user_opt) => user_opt,
@@ -47,14 +52,17 @@ pub(super) async fn get_user_by_name(
             error!(?username, %e, "Failed to get user");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "Something went wrong".to_string(),
+                INTERNAL_ERR_MSG.to_string(),
             );
         }
     };
 
     let Some(user) = user else {
         warn!("No user");
-        return (StatusCode::NOT_FOUND, "No user found".to_string());
+        return (
+            StatusCode::NOT_FOUND,
+            format!("User {username:?} not found"),
+        );
     };
 
     info!(?user, "Found user");
@@ -66,13 +74,26 @@ pub(super) async fn get_user_by_name(
 pub(super) async fn get_all_users(State(state): State<AppState>) -> impl IntoResponse {
     let users = state.client.database("test").collection::<User>("users");
 
+    let doc_count = match users.estimated_document_count().await {
+        Ok(count) => count,
+        Err(e) => {
+            error!(%e, "Can't get estimated document count");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                INTERNAL_ERR_MSG.to_string(),
+            );
+        }
+    };
+
+    info!(user_count = ?doc_count, "Got estimated count of users");
+
     let mut user_cursor = match users.find(doc! {}).await {
         Ok(cursor) => cursor,
         Err(e) => {
             error!(%e, "Failed to get all users");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "Something went wrong".to_string(),
+                INTERNAL_ERR_MSG.to_string(),
             );
         }
     };
