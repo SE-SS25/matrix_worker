@@ -8,8 +8,8 @@ services:
     restart: unless-stopped
     env_file:
       - docker/lord/.env
-    ports:
-      - "8080-8094:8080"
+    expose:
+      - "8080"
     networks:
       - matrix-kingdom
     deploy:
@@ -69,17 +69,16 @@ services:
     image: caddy:2
     container_name: matrix-caddy
     restart: unless-stopped
-    network_mode: host
-    #    ports:
-    #      - "80:80"
-    #      - "443:443"
-    #      - "443:443/udp"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    #    networks:
-    #      - matrix-kingdom
+    networks:
+      - matrix-kingdom
     depends_on:
       - matrix
 
