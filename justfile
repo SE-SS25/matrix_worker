@@ -9,6 +9,9 @@ up:
 down:
     docker compose down --remove-orphans
 
+scale count:
+    docker compose up -d --scale matrix={{ count }}
+
 rebuild: cache up
 
 db_only:
