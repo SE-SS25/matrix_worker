@@ -6,7 +6,5 @@
 			refresh 10s
 		}
 		lb_policy round_robin
-		health_uri /version
-		health_interval 10s
 	}
 }
