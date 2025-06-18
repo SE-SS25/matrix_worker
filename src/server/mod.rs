@@ -29,6 +29,7 @@ struct AppState {
 pub(crate) async fn start(db_pool: DbPool, client: Client) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
+    debug!{%allow_origin};
     let allow_origin = allow_origin.parse::<HeaderValue>().with_context(|| {
         format!(
             "Unable to parse {ORIGIN_ENV_KEY} ({allow_origin}) \
