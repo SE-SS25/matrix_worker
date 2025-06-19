@@ -1,12 +1,14 @@
 mod user;
 
-use crate::{DbPool, VERSION};
 use anyhow::{Context, Result};
 use axum::Router;
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
-use mongodb::Client;
+use matrix_commons::VERSION;
+use matrix_db_manager::DbPool;
+use matrix_macros::get_env;
+use matrix_mongo_manager::MongoClient;
 use tokio::net::TcpListener;
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
@@ -22,14 +24,14 @@ const INTERNAL_ERR_MSG: &str = "Internal Server Error";
 #[derive(Debug, Clone)]
 struct AppState {
     db_pool: DbPool,
-    client: Client,
+    client: MongoClient,
 }
 
 #[instrument(name = "start server", skip_all)]
-pub(crate) async fn start(db_pool: DbPool, client: Client) -> Result<()> {
+pub async fn start(db_pool: DbPool, client: MongoClient) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
-    debug!{%allow_origin};
+    debug! {%allow_origin};
     let allow_origin = allow_origin.parse::<HeaderValue>().with_context(|| {
         format!(
             "Unable to parse {ORIGIN_ENV_KEY} ({allow_origin}) \

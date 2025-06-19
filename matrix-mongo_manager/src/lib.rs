@@ -1,10 +1,12 @@
 use anyhow::{Context, Result};
-use mongodb::Client;
+use matrix_macros::get_env;
 use mongodb::options::ClientOptions;
 use tracing::{debug, info, instrument};
 
+pub type MongoClient = mongodb::Client;
+
 #[instrument]
-pub(crate) async fn init() -> Result<Client> {
+pub async fn init() -> Result<MongoClient> {
     let mongo_url = get_env!("MONGO_URL");
 
     debug!("Connecting to mongo");
@@ -12,7 +14,7 @@ pub(crate) async fn init() -> Result<Client> {
     let options = ClientOptions::parse(&mongo_url)
         .await
         .context("Unable to parse mongo url")?;
-    let client = Client::with_options(options).context("Unable to connect to mongo")?;
+    let client = MongoClient::with_options(options).context("Unable to connect to mongo")?;
 
     // Creating the client doesn't actually connect, so this is needed to establish a connection
     client

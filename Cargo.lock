@@ -96,9 +96,9 @@ dependencies = [
 
 [[package]]
 name = "autocfg"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
+checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "axum"
@@ -1307,21 +1307,67 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
-name = "matrix_worker"
+name = "matrix-commons"
+version = "0.1.0"
+
+[[package]]
+name = "matrix-db_manager"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "matrix-macros",
+ "sqlx",
+ "tracing",
+]
+
+[[package]]
+name = "matrix-macros"
+version = "0.1.0"
+dependencies = [
+ "tracing",
+]
+
+[[package]]
+name = "matrix-mongo_manager"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bson",
+ "matrix-macros",
+ "mongodb",
+ "tracing",
+]
+
+[[package]]
+name = "matrix-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
  "bson",
- "dotenvy",
- "mongodb",
+ "matrix-commons",
+ "matrix-db_manager",
+ "matrix-macros",
+ "matrix-mongo_manager",
  "serde",
- "sqlx",
  "tokio",
  "tower-http",
  "tracing",
+]
+
+[[package]]
+name = "matrix_worker"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dotenvy",
+ "matrix-commons",
+ "matrix-db_manager",
+ "matrix-mongo_manager",
+ "matrix-server",
+ "tokio",
+ "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]

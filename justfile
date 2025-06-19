@@ -31,7 +31,7 @@ storage_rm:
 storage_reset: storage_rm up
 
 cache:
-    cargo sqlx prepare
+    cargo sqlx prepare --workspace
 
 build: cache
     docker build ./

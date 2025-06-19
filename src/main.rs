@@ -1,20 +1,9 @@
-#[macro_use]
-mod macros;
-mod mongo;
-mod pg;
-mod server;
-
 use anyhow::{Context, Result};
-use sqlx::Postgres;
+use matrix_commons::VERSION;
 use std::env;
 use std::process::exit;
 use tracing::{Level, info, subscriber};
 use tracing_subscriber::FmtSubscriber;
-
-type DbType = Postgres;
-type DbPool = sqlx::Pool<DbType>;
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -46,12 +35,15 @@ async fn main() -> Result<()> {
     info!("Starting matrix worker v{VERSION}");
 
     let (db_pool, mongo_client) =
-        tokio::try_join!(pg::init(), mongo::init(),).context("Failed to initialize data stores")?;
+        tokio::try_join!(matrix_db_manager::init(), matrix_mongo_manager::init(),)
+            .context("Failed to initialize data stores")?;
 
     #[cfg(debug_assertions)]
-    pg::migrate(&db_pool).await.context("Migration failed")?;
+    matrix_db_manager::migrate(&db_pool)
+        .await
+        .context("Migration failed")?;
 
-    server::start(db_pool, mongo_client)
+    matrix_server::start(db_pool, mongo_client)
         .await
         .context("Failed to start and run HTTP server")?;
 

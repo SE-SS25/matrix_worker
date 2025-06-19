@@ -1,3 +1,4 @@
+#[macro_export]
 macro_rules! get_env {
     ($env_key:expr) => {
         match ::std::env::var($env_key) {

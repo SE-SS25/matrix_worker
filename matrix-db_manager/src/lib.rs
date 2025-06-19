@@ -1,16 +1,20 @@
-use crate::DbPool;
 use anyhow::{Context, Result};
+use matrix_macros::get_env;
+use sqlx::Postgres;
 use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
 use tracing::{debug, info, instrument};
+
+pub type DbType = Postgres;
+pub type DbPool = sqlx::Pool<DbType>;
 
 const DB_POOL_MAX_SIZE: u32 = 100;
 const DB_POOL_MIN_IDLE: u32 = 5;
 const DB_POOL_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[instrument(name = "db init")]
-pub(crate) async fn init() -> Result<DbPool> {
-    let db_url = get_env!("DB_URL");
+pub async fn init() -> Result<DbPool> {
+    let db_url = get_env!("DATABASE_URL");
 
     debug!("Connecting to database"); // URL not shown because of credentials
 
@@ -30,7 +34,7 @@ pub(crate) async fn init() -> Result<DbPool> {
 #[cfg(debug_assertions)]
 #[instrument(skip_all)]
 pub async fn migrate(pool: &DbPool) -> Result<()> {
-    sqlx::migrate!()
+    sqlx::migrate!("../migrations")
         .run(pool)
         .await
         .context("Failed to run migrations")?;

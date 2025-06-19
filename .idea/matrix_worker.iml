@@ -2,6 +2,15 @@
 <module type="EMPTY_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/commons/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/main/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/matrix-commons/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/matrix-db_manager/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/matrix-macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/matrix-main/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/matrix-mongo_manager/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/matrix-server/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/mongo_manager/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

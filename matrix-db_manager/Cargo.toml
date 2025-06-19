@@ -1,0 +1,12 @@
+[package]
+name = "matrix-db_manager"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+sqlx.workspace = true
+tracing.workspace = true
+
+matrix-macros.workspace = true

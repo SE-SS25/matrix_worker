@@ -1,4 +1,4 @@
-use crate::server::{AppState, INTERNAL_ERR_MSG};
+use crate::{AppState, INTERNAL_ERR_MSG};
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
