@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT * FROM worker_metric\n            LIMIT 1;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "last_heartbeat",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "uptime",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 3,
+        "name": "req_per_sec",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "write_per_sec",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "read_per_sec",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "req_total",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "req_failed",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "db_availability",
+        "type_info": "Float4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "514e0dba98dc98a4282959ac732f6856d031d8b41db731a5ef8887855dfe2a19"
+}
