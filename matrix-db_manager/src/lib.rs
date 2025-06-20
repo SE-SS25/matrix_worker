@@ -31,7 +31,6 @@ pub async fn init() -> Result<DbPool> {
     Ok(pool)
 }
 
-#[cfg(debug_assertions)]
 #[instrument(skip_all)]
 pub async fn migrate(pool: &DbPool) -> Result<()> {
     info!("Migrating");

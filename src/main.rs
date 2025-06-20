@@ -38,7 +38,6 @@ async fn main() -> Result<()> {
         tokio::try_join!(matrix_db_manager::init(), matrix_mongo_manager::init(),)
             .context("Failed to initialize data stores")?;
 
-    #[cfg(debug_assertions)]
     matrix_db_manager::migrate(&db_pool)
         .await
         .context("Migration failed")?;
