@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use matrix_macros::get_env;
-use sqlx::Postgres;
 use sqlx::postgres::PgPoolOptions;
+use sqlx::{Postgres, migrate};
 use std::time::Duration;
 use tracing::{debug, info, instrument};
 
@@ -34,7 +34,8 @@ pub async fn init() -> Result<DbPool> {
 #[cfg(debug_assertions)]
 #[instrument(skip_all)]
 pub async fn migrate(pool: &DbPool) -> Result<()> {
-    sqlx::migrate!("../migrations")
+    info!("Migrating");
+    migrate!("../migrations")
         .run(pool)
         .await
         .context("Failed to run migrations")?;
