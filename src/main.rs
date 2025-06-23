@@ -42,6 +42,14 @@ async fn main() -> Result<()> {
         .await
         .context("Migration failed")?;
 
+    let metrics = matrix_metrics::Metrics::new();
+    {
+        let db_pool = db_pool.clone();
+        let metrics = metrics.clone();
+        let manage_task = matrix_db_manager::metrics_manager::manage(metrics, db_pool);
+        tokio::spawn(manage_task);
+    }
+
     matrix_server::start(db_pool, mongo_client)
         .await
         .context("Failed to start and run HTTP server")?;
