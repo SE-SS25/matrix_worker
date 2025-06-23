@@ -26,6 +26,7 @@ axum = "0.8.4"
 bson = "2.15.0"
 dotenvy = "0.15.7"
 mongodb = "3.2.3"
+parking_lot = "0.12.4"
 serde = { version = "1.0.219", features = ["derive"] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio", "postgres", "derive", "macros", "migrate", "uuid", "rust_decimal", "chrono"] }
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread", "signal"] }
@@ -37,6 +38,7 @@ uuid = { version = "1.17.0", features = ["v4"] }
 matrix-commons = { path = "matrix-commons" }
 matrix-db_manager = { path = "matrix-db_manager" }
 matrix-macros = { path = "matrix-macros" }
+matrix-metrics = { path = "matrix-metrics" }
 matrix-mongo_manager = { path = "matrix-mongo_manager" }
 matrix-server = { path = "matrix-server" }
 
@@ -49,6 +51,7 @@ tracing.workspace = true
 
 matrix-commons.workspace = true
 matrix-db_manager.workspace = true
+matrix-metrics.workspace = true
 matrix-mongo_manager.workspace = true
 matrix-server.workspace = true
 

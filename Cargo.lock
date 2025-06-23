@@ -1329,6 +1329,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "matrix-metrics"
+version = "0.1.0"
+dependencies = [
+ "parking_lot",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "matrix-mongo_manager"
 version = "0.1.0"
 dependencies = [
@@ -1364,6 +1373,7 @@ dependencies = [
  "dotenvy",
  "matrix-commons",
  "matrix-db_manager",
+ "matrix-metrics",
  "matrix-mongo_manager",
  "matrix-server",
  "tokio",
