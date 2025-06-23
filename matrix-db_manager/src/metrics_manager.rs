@@ -34,6 +34,8 @@ async fn persist(metrics: &MetricsWrapper, running_since: Instant, db_pool: &DbP
     let req_failed = metrics.get_total_fails() as i64;
     let db_avail = (req_failed as f32) / (req_total as f32);
 
+    debug!(%id, ?uptime, req_total, req_per_sec, req_failed);
+
     query!(
         r#"
         INSERT INTO worker_metric
