@@ -1,10 +1,11 @@
 mod user;
 
 use anyhow::{Context, Result};
-use axum::Router;
+use axum::extract::Request;
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
+use axum::{Router, ServiceExt};
 use matrix_commons::VERSION;
 use matrix_db_manager::DbPool;
 use matrix_macros::get_env;
@@ -13,7 +14,9 @@ use tokio::net::TcpListener;
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::{select, signal};
+use tower::Layer;
 use tower_http::cors::CorsLayer;
+use tower_http::normalize_path::NormalizePathLayer;
 use tracing::{debug, error, info, instrument};
 
 #[cfg(unix)]
@@ -57,6 +60,10 @@ pub async fn start(db_pool: DbPool, client: MongoClient) -> Result<()> {
         .route("/user/{name}", get(user::get_user_by_name))
         .with_state(state)
         .layer(cors);
+
+    let app = ServiceExt::<Request>::into_make_service(
+        NormalizePathLayer::trim_trailing_slash().layer(app),
+    );
 
     let listener = TcpListener::bind(format!("0.0.0.0:{port}"))
         .await
