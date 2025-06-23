@@ -17,6 +17,7 @@ pub(super) async fn add_user(
     State(state): State<AppState>,
     Json(user): Json<User>,
 ) -> impl IntoResponse {
+    state.metrics.write();
     let to_insert = doc! {
         "name": &user.name,
     };
@@ -37,6 +38,7 @@ pub(super) async fn get_user_by_name(
     State(state): State<AppState>,
     Path(username): Path<String>,
 ) -> impl IntoResponse {
+    state.metrics.read();
     let users = state.client.database("test").collection::<User>("users");
 
     let user = match users
@@ -49,6 +51,7 @@ pub(super) async fn get_user_by_name(
     {
         Ok(user_opt) => user_opt,
         Err(e) => {
+            state.metrics.fail();
             error!(?username, %e, "Failed to get user");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -72,11 +75,13 @@ pub(super) async fn get_user_by_name(
 
 #[instrument(skip_all)]
 pub(super) async fn get_all_users(State(state): State<AppState>) -> impl IntoResponse {
+    state.metrics.read();
     let users = state.client.database("test").collection::<User>("users");
 
     let doc_count = match users.estimated_document_count().await {
         Ok(count) => count,
         Err(e) => {
+            state.metrics.fail();
             error!(%e, "Can't get estimated document count");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -90,6 +95,7 @@ pub(super) async fn get_all_users(State(state): State<AppState>) -> impl IntoRes
     let mut user_cursor = match users.find(doc! {}).await {
         Ok(cursor) => cursor,
         Err(e) => {
+            state.metrics.fail();
             error!(%e, "Failed to get all users");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,

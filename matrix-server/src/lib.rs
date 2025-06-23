@@ -9,6 +9,7 @@ use axum::{Router, ServiceExt};
 use matrix_commons::VERSION;
 use matrix_db_manager::DbPool;
 use matrix_macros::get_env;
+use matrix_metrics::MetricsWrapper;
 use matrix_mongo_manager::MongoClient;
 use tokio::net::TcpListener;
 #[cfg(unix)]
@@ -28,10 +29,11 @@ const INTERNAL_ERR_MSG: &str = "Internal Server Error";
 struct AppState {
     db_pool: DbPool,
     client: MongoClient,
+    metrics: MetricsWrapper,
 }
 
 #[instrument(name = "start server", skip_all)]
-pub async fn start(db_pool: DbPool, client: MongoClient) -> Result<()> {
+pub async fn start(db_pool: DbPool, client: MongoClient, metrics: MetricsWrapper) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
     debug! {%allow_origin};
@@ -48,7 +50,11 @@ pub async fn start(db_pool: DbPool, client: MongoClient) -> Result<()> {
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE]);
 
-    let state = AppState { db_pool, client };
+    let state = AppState {
+        db_pool,
+        client,
+        metrics,
+    };
 
     info!(port, "Starting server");
 

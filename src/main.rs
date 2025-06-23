@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
         tokio::spawn(manage_task);
     }
 
-    matrix_server::start(db_pool, mongo_client)
+    matrix_server::start(db_pool, mongo_client, metrics)
         .await
         .context("Failed to start and run HTTP server")?;
 

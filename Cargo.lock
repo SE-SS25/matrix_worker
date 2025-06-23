@@ -1360,6 +1360,7 @@ dependencies = [
  "matrix-commons",
  "matrix-db_manager",
  "matrix-macros",
+ "matrix-metrics",
  "matrix-mongo_manager",
  "serde",
  "tokio",
