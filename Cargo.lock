@@ -1316,7 +1316,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "matrix-macros",
+ "matrix-metrics",
  "sqlx",
+ "tokio",
  "tracing",
  "uuid",
 ]

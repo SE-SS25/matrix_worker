@@ -49,6 +49,10 @@ impl Metrics {
         Arc::new(metrics)
     }
 
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
     pub fn read(&self) {
         self.total_requests.fetch_add(1, Ordering::Relaxed);
         Self::insert_metric(&self.reads)

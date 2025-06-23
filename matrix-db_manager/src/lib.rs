@@ -1,3 +1,5 @@
+pub mod metrics_manager;
+
 use anyhow::{Context, Result};
 use matrix_macros::get_env;
 use sqlx::postgres::PgPoolOptions;
