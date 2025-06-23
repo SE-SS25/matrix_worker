@@ -21,7 +21,7 @@ db_only:
     docker compose up --detach postgres mongo mongo-express
 
 db_init: db_only
-    @sleep 1
+    @sleep 3
     sqlx database create
     sqlx migrate run
 
