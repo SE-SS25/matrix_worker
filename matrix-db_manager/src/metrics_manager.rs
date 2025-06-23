@@ -27,8 +27,8 @@ async fn persist(metrics: &MetricsWrapper, running_since: Instant, db_pool: &DbP
     let id = metrics.id();
     let last_heartbeat = chrono::Utc::now();
     let uptime = instant_to_interval(running_since);
-    let read_per_sec = metrics.read_ps() as i32;
-    let write_per_sec = metrics.write_ps() as i32;
+    let read_per_sec = metrics.read_ps();
+    let write_per_sec = metrics.write_ps();
     let req_per_sec = read_per_sec + write_per_sec;
     let req_total = metrics.get_total_requests() as i64;
     let req_failed = metrics.get_total_fails() as i64;
@@ -48,7 +48,7 @@ async fn persist(metrics: &MetricsWrapper, running_since: Instant, db_pool: &DbP
                 write_per_sec,
                 req_total,
                 req_failed,
-                db_availability
+                db_err_rate
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT (id) DO UPDATE SET
@@ -59,7 +59,7 @@ async fn persist(metrics: &MetricsWrapper, running_since: Instant, db_pool: &DbP
                 write_per_sec = EXCLUDED.write_per_sec,
                 req_total = EXCLUDED.req_total,
                 req_failed = EXCLUDED.req_failed,
-                db_availability = EXCLUDED.db_availability;
+                db_err_rate = EXCLUDED.db_err_rate;
         "#,
         id,
         last_heartbeat,
