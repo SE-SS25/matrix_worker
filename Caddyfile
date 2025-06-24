@@ -1,7 +1,7 @@
 :80 {
 	reverse_proxy {
 		dynamic a {
-			name matrix
+			name worker
 			port 8080
 			refresh 10s
 		}

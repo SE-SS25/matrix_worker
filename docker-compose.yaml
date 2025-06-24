@@ -1,5 +1,5 @@
 services:
-  matrix:
+  worker:
     build:
       context: .
       dockerfile: docker/lord/debug/Dockerfile
@@ -81,7 +81,7 @@ services:
     networks:
       - matrix-kingdom
     depends_on:
-      - matrix
+      - worker
 
 
 networks:
