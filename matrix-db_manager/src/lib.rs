@@ -11,6 +11,7 @@ use sqlx::postgres::types::PgInterval;
 use sqlx::types::chrono;
 use sqlx::{Postgres, migrate, query};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tracing::{debug, info, instrument};
 use uuid::Uuid;
@@ -23,6 +24,8 @@ const DB_POOL_MIN_IDLE: u32 = 5;
 const DB_POOL_TIMEOUT: Duration = Duration::from_secs(5);
 const BACKOFF_DEFAULT: Duration = Duration::from_millis(500);
 
+static LOADED: AtomicBool = AtomicBool::new(false);
+
 #[derive(Clone, Debug)]
 pub struct DbManager {
     db_pool: DbPool,
@@ -32,6 +35,10 @@ pub struct DbManager {
 impl DbManager {
     #[instrument(name = "db init")]
     pub async fn new() -> Result<Self> {
+        if LOADED.load(Ordering::SeqCst) {
+            bail!("Can't create the DbManager more than once!");
+        }
+        LOADED.store(true, Ordering::SeqCst);
         let db_url = get_env!("DATABASE_URL");
 
         debug!("Connecting to database"); // URL not shown because of credentials
