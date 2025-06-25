@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT * FROM worker_metric\n            LIMIT 1;\n        ",
+  "query": "\n            SELECT * FROM worker_metric\n                LIMIT 1;\n            ",
   "describe": {
     "columns": [
       {
@@ -64,5 +64,5 @@
       false
     ]
   },
-  "hash": "514e0dba98dc98a4282959ac732f6856d031d8b41db731a5ef8887855dfe2a19"
+  "hash": "760e45258cf7eaba3cdde3176f749e99069cb893b510809995228fb44eea47a6"
 }

@@ -6,10 +6,12 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+parking_lot.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 uuid.workspace = true
 
+matrix-errors.workspace = true
 matrix-macros.workspace = true
 matrix-metrics.workspace = true

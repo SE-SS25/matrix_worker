@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM worker_metric\n                WHERE TRUE;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "14c0cfc7a1adb4678d55dc22717b564b2453fc05716db2dc2fa27165bc69e8fe"
+}

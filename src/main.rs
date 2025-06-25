@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use matrix_commons::VERSION;
+use matrix_db_manager::DbManager;
 use std::env;
 use std::process::exit;
 use tracing::{Level, info, subscriber};
@@ -34,23 +35,22 @@ async fn main() -> Result<()> {
 
     info!("Starting matrix worker v{VERSION}");
 
-    let (db_pool, mongo_client) =
-        tokio::try_join!(matrix_db_manager::init(), matrix_mongo_manager::init(),)
+    let (db_manager, mongo_client) =
+        tokio::try_join!(DbManager::new(), matrix_mongo_manager::init(),)
             .context("Failed to initialize data stores")?;
 
-    matrix_db_manager::migrate(&db_pool)
-        .await
-        .context("Migration failed")?;
+    db_manager.migrate().await.context("Migration failed")?;
 
     let metrics = matrix_metrics::Metrics::new();
     {
-        let db_pool = db_pool.clone();
+        let db_manager = db_manager.clone();
         let metrics = metrics.clone();
-        let manage_task = matrix_db_manager::metrics_manager::manage(metrics, db_pool);
-        tokio::spawn(manage_task);
+        tokio::spawn(async move {
+            db_manager.manage(metrics).await;
+        });
     }
 
-    matrix_server::start(db_pool, mongo_client, metrics)
+    matrix_server::start(db_manager, mongo_client, metrics)
         .await
         .context("Failed to start and run HTTP server")?;
 

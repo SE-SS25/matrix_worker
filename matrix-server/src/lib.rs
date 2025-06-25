@@ -7,7 +7,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Router, ServiceExt};
 use matrix_commons::VERSION;
-use matrix_db_manager::DbPool;
+use matrix_db_manager::DbManager;
 use matrix_macros::get_env;
 use matrix_metrics::MetricsWrapper;
 use matrix_mongo_manager::MongoClient;
@@ -26,14 +26,19 @@ const DOCKER_SHUTDOWN_SIG_NUM: i32 = 15;
 const INTERNAL_ERR_MSG: &str = "Internal Server Error";
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // TODO Remove
 struct AppState {
-    db_pool: DbPool,
+    db_manager: DbManager,
     client: MongoClient,
     metrics: MetricsWrapper,
 }
 
 #[instrument(name = "start server", skip_all)]
-pub async fn start(db_pool: DbPool, client: MongoClient, metrics: MetricsWrapper) -> Result<()> {
+pub async fn start(
+    db_manager: DbManager,
+    client: MongoClient,
+    metrics: MetricsWrapper,
+) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
     debug! {%allow_origin};
@@ -51,7 +56,7 @@ pub async fn start(db_pool: DbPool, client: MongoClient, metrics: MetricsWrapper
         .allow_headers([header::CONTENT_TYPE]);
 
     let state = AppState {
-        db_pool,
+        db_manager,
         client,
         metrics,
     };

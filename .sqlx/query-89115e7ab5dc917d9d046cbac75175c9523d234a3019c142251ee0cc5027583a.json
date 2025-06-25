@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO worker_metric (id, last_heartbeat, uptime)\n                VALUES ($1, $2, $3);\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Interval"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "89115e7ab5dc917d9d046cbac75175c9523d234a3019c142251ee0cc5027583a"
+}

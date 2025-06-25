@@ -1,4 +1,4 @@
-use crate::DbPool;
+use crate::DbManager;
 use anyhow::{Context, Result};
 use matrix_metrics::MetricsWrapper;
 use sqlx::postgres::types::PgInterval;
@@ -10,34 +10,37 @@ use tracing::{debug, error, instrument, warn};
 
 const PERSIST_INTERVAL: Duration = Duration::from_secs(10);
 
-#[instrument(name = "manage metrics", skip_all)]
-pub async fn manage(metrics: MetricsWrapper, db_pool: DbPool) {
-    let startup = Instant::now();
-    loop {
-        debug!("Persisting metrics");
-        if let Err(e) = persist(&metrics, startup, &db_pool).await {
-            error!(?e, "Persisting metrics failed");
+impl DbManager {
+    #[instrument(name = "manage metrics", skip_all)]
+    pub async fn manage(&self, metrics: MetricsWrapper) {
+        let startup = Instant::now();
+        loop {
+            debug!("Persisting metrics");
+            if let Err(e) = self.persist(&metrics, startup).await {
+                error!(?e, "Persisting metrics failed");
+            }
+            sleep(PERSIST_INTERVAL).await;
         }
-        sleep(PERSIST_INTERVAL).await;
     }
-}
 
-#[instrument(skip_all)]
-async fn persist(metrics: &MetricsWrapper, running_since: Instant, db_pool: &DbPool) -> Result<()> {
-    let id = metrics.id();
-    let last_heartbeat = chrono::Utc::now();
-    let uptime = instant_to_interval(running_since);
-    let read_per_sec = metrics.read_ps();
-    let write_per_sec = metrics.write_ps();
-    let req_per_sec = read_per_sec + write_per_sec;
-    let req_total = metrics.get_total_requests() as i64;
-    let req_failed = metrics.get_total_fails() as i64;
-    let db_avail = (req_failed as f32) / (req_total as f32);
+    #[instrument(skip_all)]
+    async fn persist(&self, metrics: &MetricsWrapper, running_since: Instant) -> Result<()> {
+        let db_pool = &self.db_pool;
 
-    debug!(%id, ?uptime, req_total, req_per_sec, req_failed);
+        let id = metrics.id();
+        let last_heartbeat = chrono::Utc::now();
+        let uptime = instant_to_interval(running_since);
+        let read_per_sec = metrics.read_ps();
+        let write_per_sec = metrics.write_ps();
+        let req_per_sec = read_per_sec + write_per_sec;
+        let req_total = metrics.get_total_requests() as i64;
+        let req_failed = metrics.get_total_fails() as i64;
+        let db_avail = (req_failed as f32) / (req_total as f32);
 
-    query!(
-        r#"
+        debug!(%id, ?uptime, req_total, req_per_sec, req_failed);
+
+        query!(
+            r#"
         INSERT INTO worker_metric
             (
                 id,
@@ -61,21 +64,22 @@ async fn persist(metrics: &MetricsWrapper, running_since: Instant, db_pool: &DbP
                 req_failed = EXCLUDED.req_failed,
                 db_err_rate = EXCLUDED.db_err_rate;
         "#,
-        id,
-        last_heartbeat,
-        uptime,
-        req_per_sec,
-        read_per_sec,
-        write_per_sec,
-        req_total,
-        req_failed,
-        db_avail,
-    )
-    .execute(db_pool)
-    .await
-    .context("Unable to persist metrics")?;
+            id,
+            last_heartbeat,
+            uptime,
+            req_per_sec,
+            read_per_sec,
+            write_per_sec,
+            req_total,
+            req_failed,
+            db_avail,
+        )
+        .execute(db_pool)
+        .await
+        .context("Unable to persist metrics")?;
 
-    Ok(())
+        Ok(())
+    }
 }
 
 #[instrument(skip_all)]
