@@ -1,0 +1,10 @@
+[package]
+name = "matrix-errors"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+
+thiserror.workspace = true

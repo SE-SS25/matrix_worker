@@ -13,6 +13,7 @@
       <sourceFolder url="file://$MODULE_DIR$/mongo_manager/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/matrix-metrics/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/matrix-errors/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
