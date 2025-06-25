@@ -1,16 +1,15 @@
 #[macro_use]
 mod macros;
+mod guard;
 pub mod metrics_manager;
 
 use anyhow::{Context, Result, anyhow, bail};
 use matrix_errors::DbErr::Unreachable;
 use matrix_macros::get_env;
-use parking_lot::RwLock;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::postgres::types::PgInterval;
 use sqlx::types::chrono;
 use sqlx::{Postgres, migrate, query};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tracing::{debug, info, instrument};
@@ -22,14 +21,12 @@ pub type DbPool = sqlx::Pool<DbType>;
 const DB_POOL_MAX_SIZE: u32 = 100;
 const DB_POOL_MIN_IDLE: u32 = 5;
 const DB_POOL_TIMEOUT: Duration = Duration::from_secs(5);
-const BACKOFF_DEFAULT: Duration = Duration::from_millis(500);
 
 static LOADED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone, Debug)]
 pub struct DbManager {
     db_pool: DbPool,
-    up: Arc<RwLock<bool>>,
 }
 
 impl DbManager {
@@ -54,10 +51,7 @@ impl DbManager {
 
         info!("Connected to database");
 
-        let manager = DbManager {
-            db_pool,
-            up: Arc::new(RwLock::new(true)),
-        };
+        let manager = DbManager { db_pool };
 
         Ok(manager)
     }

@@ -1318,7 +1318,7 @@ dependencies = [
  "matrix-errors",
  "matrix-macros",
  "matrix-metrics",
- "parking_lot",
+ "rand 0.9.1",
  "sqlx",
  "tokio",
  "tracing",
