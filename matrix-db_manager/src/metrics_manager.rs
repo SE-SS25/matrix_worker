@@ -25,7 +25,7 @@ impl DbManager {
 
     #[instrument(skip_all)]
     async fn persist(&self, metrics: &MetricsWrapper, running_since: Instant) -> Result<()> {
-        let db_pool = &self.db_pool;
+        let db_pool = backoff!(self);
 
         let id = metrics.id();
         let last_heartbeat = chrono::Utc::now();
@@ -76,7 +76,8 @@ impl DbManager {
         )
         .execute(db_pool)
         .await
-        .context("Unable to persist metrics")?;
+        .context("Unable to persist metrics")
+        .map_err(|e| db_fail!(self, e))?;
 
         Ok(())
     }
