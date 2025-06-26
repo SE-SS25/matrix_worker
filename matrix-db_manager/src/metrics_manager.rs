@@ -41,7 +41,7 @@ impl DbManager {
 
         query!(
             r#"
-        INSERT INTO worker_metric
+            INSERT INTO worker_metric
             (
                 id,
                 last_heartbeat,
@@ -53,16 +53,16 @@ impl DbManager {
                 req_failed,
                 db_err_rate
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            ON CONFLICT (id) DO UPDATE SET
-                last_heartbeat = EXCLUDED.last_heartbeat,
-                uptime = EXCLUDED.uptime,
-                req_per_sec = EXCLUDED.req_per_sec,
-                read_per_sec = EXCLUDED.read_per_sec,
-                write_per_sec = EXCLUDED.write_per_sec,
-                req_total = EXCLUDED.req_total,
-                req_failed = EXCLUDED.req_failed,
-                db_err_rate = EXCLUDED.db_err_rate;
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (id) DO UPDATE SET
+                    last_heartbeat = EXCLUDED.last_heartbeat,
+                    uptime = EXCLUDED.uptime,
+                    req_per_sec = EXCLUDED.req_per_sec,
+                    read_per_sec = EXCLUDED.read_per_sec,
+                    write_per_sec = EXCLUDED.write_per_sec,
+                    req_total = EXCLUDED.req_total,
+                    req_failed = EXCLUDED.req_failed,
+                    db_err_rate = EXCLUDED.db_err_rate;
         "#,
             id,
             last_heartbeat,
