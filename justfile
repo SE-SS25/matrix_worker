@@ -21,14 +21,14 @@ db_only:
     docker compose up --detach postgres mongo mongo-express
 
 db_init: db_only
-    @sleep 3
+    sleep 3
     sqlx database create
     sqlx migrate run
 
 storage_rm:
     docker compose down --remove-orphans --volumes
 
-storage_reset: storage_rm up
+storage_reset: storage_rm db_init
 
 cache:
     cargo sqlx prepare --workspace
