@@ -11,16 +11,20 @@ const JITTER_RANGE: RangeInclusive<f64> = 0.5..=1.5;
 const DEFAULT_BACKOFF: Duration = Duration::from_millis(500);
 const MAX_BACKOFF: Duration = Duration::from_secs(5 * 60); // Max 5 mins
 
-pub(super) static GUARD_RUNNING: AtomicBool = AtomicBool::new(false);
+static DB_GUARD_RUNNING: AtomicBool = AtomicBool::new(false);
 
-pub(super) struct DbGuard {
+pub struct DbGuard {
     db_pool: DbPool,
 }
 
 impl DbGuard {
+    pub fn is_running(ord: Ordering) -> bool {
+        DB_GUARD_RUNNING.load(ord)
+    }
+
     #[instrument(skip_all)]
     pub(super) fn init(db_pool: &DbPool) {
-        if GUARD_RUNNING
+        if DB_GUARD_RUNNING
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_err()
         {
@@ -65,6 +69,6 @@ impl DbGuard {
 
 impl Drop for DbGuard {
     fn drop(&mut self) {
-        GUARD_RUNNING.store(false, Ordering::Relaxed)
+        DB_GUARD_RUNNING.store(false, Ordering::Relaxed)
     }
 }

@@ -11,6 +11,7 @@ use matrix_db_manager::DbManager;
 use matrix_macros::get_env;
 use matrix_metrics::MetricsWrapper;
 use matrix_mongo_manager::MongoClient;
+use std::sync::atomic::Ordering;
 use tokio::net::TcpListener;
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
@@ -41,7 +42,7 @@ pub async fn start(
 ) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
-    debug! {%allow_origin};
+    debug!(%allow_origin);
     let allow_origin = allow_origin.parse::<HeaderValue>().with_context(|| {
         format!(
             "Unable to parse {ORIGIN_ENV_KEY} ({allow_origin}) \
@@ -123,6 +124,9 @@ async fn shutdown_signal() {
 
 #[instrument]
 async fn version() -> impl IntoResponse {
+    if matrix_db_manager::guard::DbGuard::is_running(Ordering::Relaxed) {
+        return (StatusCode::INTERNAL_SERVER_ERROR, "DB Offline");
+    }
     (StatusCode::OK, VERSION)
 }
 

@@ -1,6 +1,6 @@
 #[macro_use]
 mod macros;
-mod guard;
+pub mod guard;
 pub mod metrics_manager;
 
 use anyhow::{Context, Result, anyhow, bail};

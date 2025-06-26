@@ -3,13 +3,13 @@
 /// Get `db_pool` otherwise
 macro_rules! backoff {
     ($self:expr) => {{
-        use crate::guard::GUARD_RUNNING;
+        use crate::guard::DbGuard;
         #[allow(unused_imports)]
         use anyhow::{anyhow, bail};
         use core::sync::atomic::Ordering;
         use matrix_errors::DbErr;
 
-        if GUARD_RUNNING.load(Ordering::SeqCst) {
+        if DbGuard::is_running(Ordering::SeqCst) {
             bail!(DbErr::Unreachable(anyhow!("Unreachable")));
         }
         &$self.db_pool
