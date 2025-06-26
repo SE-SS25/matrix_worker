@@ -46,7 +46,7 @@ impl DbGuard {
             if self.check_conn().await.is_ok() {
                 return;
             };
-            let millis = backoff.as_millis().pow(2) as f64;
+            let millis = (backoff.as_millis() * 2) as f64;
             let modifier = rand::random_range(JITTER_RANGE);
             let backoff_millis = (millis * modifier) as u64;
             backoff = Duration::from_millis(backoff_millis).min(MAX_BACKOFF);
