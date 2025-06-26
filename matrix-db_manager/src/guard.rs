@@ -18,9 +18,11 @@ pub(super) struct DbGuard {
 
 impl DbGuard {
     pub(super) fn init(db_pool: &DbPool) {
-        match GUARD_RUNNING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
-            Ok(_) => {}
-            Err(_) => return,
+        if GUARD_RUNNING
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return;
         }
 
         let guard = Self {

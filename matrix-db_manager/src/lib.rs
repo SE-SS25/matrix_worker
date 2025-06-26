@@ -32,10 +32,12 @@ pub struct DbManager {
 impl DbManager {
     #[instrument(name = "db init")]
     pub async fn new() -> Result<Self> {
-        if LOADED.load(Ordering::SeqCst) {
-            bail!("Can't create the DbManager more than once!");
+        if LOADED
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            bail!("Can't create the DbManager more than once! (You can clone it tho)");
         }
-        LOADED.store(true, Ordering::SeqCst);
         let db_url = get_env!("DATABASE_URL");
 
         debug!("Connecting to database"); // URL not shown because of credentials
