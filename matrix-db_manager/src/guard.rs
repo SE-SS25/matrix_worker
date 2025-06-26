@@ -5,7 +5,7 @@ use sqlx::Connection;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, info, instrument, warn};
 
 const JITTER_RANGE: RangeInclusive<f64> = 0.5..=1.5;
 const DEFAULT_BACKOFF: Duration = Duration::from_millis(500);
@@ -44,6 +44,7 @@ impl DbGuard {
             );
             sleep(backoff).await;
             if self.check_conn().await.is_ok() {
+                info!("DB is alive again");
                 return;
             };
             let millis = (backoff.as_millis() * 2) as f64;
