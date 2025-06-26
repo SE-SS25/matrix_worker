@@ -5,6 +5,7 @@ use sqlx::Connection;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
+use tracing::{debug, instrument, warn};
 
 const JITTER_RANGE: RangeInclusive<f64> = 0.5..=1.5;
 const DEFAULT_BACKOFF: Duration = Duration::from_millis(500);
@@ -17,6 +18,7 @@ pub(super) struct DbGuard {
 }
 
 impl DbGuard {
+    #[instrument(skip_all)]
     pub(super) fn init(db_pool: &DbPool) {
         if GUARD_RUNNING
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
@@ -32,9 +34,14 @@ impl DbGuard {
         tokio::spawn(guard.run());
     }
 
+    #[instrument(skip_all)]
     async fn run(self) {
         let mut backoff = DEFAULT_BACKOFF;
         loop {
+            warn!(
+                "DB is down, backing off for {ms}ms",
+                ms = backoff.as_millis()
+            );
             sleep(backoff).await;
             if self.check_conn().await.is_ok() {
                 return;
@@ -46,7 +53,9 @@ impl DbGuard {
         }
     }
 
+    #[instrument(skip_all)]
     async fn check_conn(&self) -> Result<()> {
+        debug!("Checking");
         let mut conn = self.db_pool.acquire().await?;
         conn.ping().await?;
         Ok(())
