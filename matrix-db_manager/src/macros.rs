@@ -24,9 +24,6 @@ macro_rules! db_fail {
         use anyhow::{anyhow, bail};
         use matrix_errors::DbErr;
 
-        // TODO What if backoff thread determines that db is up again
-        // TODO And then this write comes through?
-        // TODO Solution, start backoff thread below
         DbGuard::init(&$self.db_pool);
         DbErr::Unreachable($e)
     }};
