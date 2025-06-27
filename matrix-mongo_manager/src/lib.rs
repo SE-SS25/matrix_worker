@@ -13,12 +13,12 @@ use std::sync::mpsc::Sender;
 use tracing::{debug, error, instrument};
 use uuid::Uuid;
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct MongoManager {
     id: Uuid,
     client: Option<Client>,
     guard_running: Arc<AtomicBool>,
-    guard_tx: Mutex<Option<Sender<()>>>,
+    guard_tx: Arc<Mutex<Option<Sender<()>>>>,
 }
 
 impl MongoManager {
@@ -58,7 +58,7 @@ impl Drop for MongoManager {
     fn drop(&mut self) {
         let mut opt = self.guard_tx.lock();
         if let Some(ref mut tx) = *opt {
-            let _ = tx.send(()); // Err = no receiver => Don't care (Also, this will happen if the db was down at least once, as we don't clean this (We would need an Arc for that))
+            let _ = tx.send(()); // Err = no receiver => Don't care (Also, this will happen if the db was down at least once, as we don't clean this (we would need to lock again))
         };
     }
 }
