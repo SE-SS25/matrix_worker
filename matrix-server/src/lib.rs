@@ -8,7 +8,6 @@ use matrix_commons::VERSION;
 use matrix_db_manager::DbManager;
 use matrix_macros::get_env;
 use matrix_metrics::MetricsWrapper;
-use matrix_mongo_manager::MongoManager;
 use std::sync::atomic::Ordering;
 use tokio::net::TcpListener;
 #[cfg(unix)]
@@ -28,16 +27,11 @@ const INTERNAL_ERR_MSG: &str = "Internal Server Error";
 #[allow(dead_code)] // TODO Remove
 struct AppState {
     db_manager: DbManager,
-    mongo_manager: MongoManager,
     metrics: MetricsWrapper,
 }
 
 #[instrument(name = "start server", skip_all)]
-pub async fn start(
-    db_manager: DbManager,
-    mongo_manager: MongoManager,
-    metrics: MetricsWrapper,
-) -> Result<()> {
+pub async fn start(db_manager: DbManager, metrics: MetricsWrapper) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
     debug!(%allow_origin);
@@ -56,7 +50,6 @@ pub async fn start(
 
     let state = AppState {
         db_manager,
-        mongo_manager,
         metrics,
     };
 

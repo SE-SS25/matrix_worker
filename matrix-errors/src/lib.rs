@@ -11,4 +11,6 @@ pub enum DbErr {
 pub enum MongoErr {
     #[error("Mongo is unreachable: {0:?}")]
     Unreachable(Error),
+    #[error("Invalid Mongo URL for id: {0:?}")]
+    InvalidUrl(String),
 }

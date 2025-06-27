@@ -1,43 +1,48 @@
-use crate::MongoManager;
 use anyhow::Result;
 use bson::doc;
 use mongodb::Client;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{Receiver, Sender};
+use std::sync::{Arc, mpsc};
 use tokio::time::sleep;
 use tracing::{debug, info, instrument, warn};
 
-static MONGO_GUARD_RUNNING: AtomicBool = AtomicBool::new(false);
-
+#[derive(Debug)]
 pub struct MongoGuard {
     client: Client,
+    instance_down: Arc<AtomicBool>,
 }
 
 impl MongoGuard {
-    #[instrument]
-    pub fn is_running(ord: Ordering) -> bool {
-        MONGO_GUARD_RUNNING.load(ord)
-    }
-
     #[instrument(skip_all)]
-    pub(super) fn init(client: &Client) {
-        if MONGO_GUARD_RUNNING
+    pub(super) fn init(client: &Client, running: &Arc<AtomicBool>) -> Option<Sender<()>> {
+        if running
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_err()
         {
-            return;
+            return None;
         }
 
         let guard = Self {
             client: client.clone(),
+            instance_down: running.clone(),
         };
 
-        tokio::spawn(guard.run());
+        let (tx, rx) = mpsc::channel();
+
+        tokio::spawn(guard.run(rx));
+
+        Some(tx)
     }
 
     #[instrument(skip_all)]
-    async fn run(self) {
+    async fn run(self, rx: Receiver<()>) {
         let mut backoff = matrix_commons::DEFAULT_BACKOFF;
         loop {
+            if rx.try_recv().is_ok() {
+                debug!("Manager is down, returning");
+                return;
+            }
             warn!(
                 "Mongo is down, backing off for {ms}ms",
                 ms = backoff.as_millis()
@@ -59,5 +64,11 @@ impl MongoGuard {
             .run_command(doc! {"ping": 1})
             .await?;
         Ok(())
+    }
+}
+
+impl Drop for MongoGuard {
+    fn drop(&mut self) {
+        self.instance_down.store(false, Ordering::Relaxed);
     }
 }

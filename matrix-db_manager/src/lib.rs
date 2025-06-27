@@ -2,6 +2,7 @@
 mod macros;
 pub mod guard;
 pub mod metrics_manager;
+mod mongo_manager;
 
 use anyhow::{Context, Result, anyhow, bail};
 use matrix_errors::DbErr::Unreachable;
