@@ -38,6 +38,7 @@ impl DbManager {
         {
             bail!("Can't create the DbManager more than once! (You can clone it tho)");
         }
+
         let db_url = get_env!("DATABASE_URL");
 
         debug!("Connecting to database"); // URL not shown because of credentials

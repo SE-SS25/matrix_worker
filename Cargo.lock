@@ -1358,8 +1358,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bson",
+ "matrix-commons",
+ "matrix-errors",
  "matrix-macros",
  "mongodb",
+ "parking_lot",
+ "serde",
+ "tokio",
  "tracing",
 ]
 

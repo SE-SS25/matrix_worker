@@ -1,29 +1,55 @@
-use anyhow::{Context, Result};
+#[macro_use]
+mod macros;
+mod guard;
+mod mappings;
+pub mod user;
+
+use anyhow::{Context, Result, bail};
 use matrix_macros::get_env;
+use mongodb::Client;
 use mongodb::options::ClientOptions;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{debug, info, instrument};
 
-pub type MongoClient = mongodb::Client;
+pub type MongoClient = Client;
 
-#[instrument]
-pub async fn init() -> Result<MongoClient> {
-    let mongo_url = get_env!("MONGO_URL");
+static LOADED: AtomicBool = AtomicBool::new(false);
 
-    debug!("Connecting to mongo");
+#[derive(Clone, Debug)]
+pub struct MongoManager {
+    client: Client,
+}
 
-    let options = ClientOptions::parse(&mongo_url)
-        .await
-        .context("Unable to parse mongo url")?;
-    let client = MongoClient::with_options(options).context("Unable to connect to mongo")?;
+impl MongoManager {
+    #[instrument]
+    pub async fn new() -> Result<Self> {
+        if LOADED
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            bail!("Can't create MongoManager more than once! (You can clone it tho)");
+        }
 
-    // Creating the client doesn't actually connect, so this is needed to establish a connection
-    client
-        .database("admin")
-        .run_command(bson::doc! {"ping":1})
-        .await
-        .context("Unable to ping mongo")?;
+        let mongo_url = get_env!("MONGO_URL");
 
-    info!("Connected to mongo");
+        debug!("Connecting to mongo");
 
-    Ok(client)
+        let options = ClientOptions::parse(&mongo_url)
+            .await
+            .context("Unable to parse mongo url")?;
+        let client = MongoClient::with_options(options).context("Unable to create Mongo client")?;
+
+        // Creating the client doesn't actually connect, so this is needed to establish a connection
+        client
+            .database("admin")
+            .run_command(bson::doc! {"ping": 1})
+            .await
+            .context("Unable to ping mongo")?;
+
+        info!("Connected to mongo");
+
+        let manager = MongoManager { client };
+
+        Ok(manager)
+    }
 }

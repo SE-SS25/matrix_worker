@@ -8,6 +8,11 @@ license.workspace = true
 anyhow.workspace = true
 bson.workspace = true
 mongodb.workspace = true
+parking_lot.workspace = true
+serde.workspace = true
+tokio.workspace = true
 tracing.workspace = true
 
+matrix-commons.workspace = true
+matrix-errors.workspace = true
 matrix-macros.workspace = true
