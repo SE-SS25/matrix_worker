@@ -1309,16 +1309,19 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 [[package]]
 name = "matrix-commons"
 version = "0.1.0"
+dependencies = [
+ "rand 0.9.1",
+]
 
 [[package]]
 name = "matrix-db_manager"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "matrix-commons",
  "matrix-errors",
  "matrix-macros",
  "matrix-metrics",
- "rand 0.9.1",
  "sqlx",
  "tokio",
  "tracing",

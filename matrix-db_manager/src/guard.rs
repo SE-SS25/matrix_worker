@@ -1,15 +1,9 @@
 use crate::DbPool;
 use anyhow::Result;
-use core::ops::RangeInclusive;
 use sqlx::Connection;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
 use tokio::time::sleep;
 use tracing::{debug, info, instrument, warn};
-
-const JITTER_RANGE: RangeInclusive<f64> = 0.5..=1.5;
-const DEFAULT_BACKOFF: Duration = Duration::from_millis(500);
-const MAX_BACKOFF: Duration = Duration::from_secs(5 * 60); // Max 5 mins
 
 static DB_GUARD_RUNNING: AtomicBool = AtomicBool::new(false);
 
@@ -40,7 +34,7 @@ impl DbGuard {
 
     #[instrument(skip_all)]
     async fn run(self) {
-        let mut backoff = DEFAULT_BACKOFF;
+        let mut backoff = matrix_commons::DEFAULT_BACKOFF;
         loop {
             warn!(
                 "DB is down, backing off for {ms}ms",
@@ -51,10 +45,7 @@ impl DbGuard {
                 info!("DB is alive again");
                 return;
             };
-            let millis = (backoff.as_millis() * 2) as f64;
-            let modifier = rand::random_range(JITTER_RANGE);
-            let backoff_millis = (millis * modifier) as u64;
-            backoff = Duration::from_millis(backoff_millis).min(MAX_BACKOFF);
+            backoff = matrix_commons::jitter(backoff);
         }
     }
 
