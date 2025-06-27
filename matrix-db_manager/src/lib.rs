@@ -78,7 +78,7 @@ impl DbManager {
         .execute(db_pool)
         .await
         .context("Can't delete")
-        .map_err(|e| db_fail!(self, e))?;
+        .map_err(|e| hans!(self, e))?;
 
         query!(
             r#"
@@ -92,7 +92,7 @@ impl DbManager {
         .execute(db_pool)
         .await
         .context("Can't insert")
-        .map_err(|e| db_fail!(self, e))?;
+        .map_err(|e| hans!(self, e))?;
 
         let res = query!(
             r#"
@@ -103,7 +103,7 @@ impl DbManager {
         .fetch_one(db_pool)
         .await
         .context("Can't get worker_metrics")
-        .map_err(|e| db_fail!(self, e))?;
+        .map_err(|e| hans!(self, e))?;
 
         info!("{res:#?}");
 
@@ -119,7 +119,7 @@ impl DbManager {
             .run(db_pool)
             .await
             .context("Failed to run migrations")
-            .map_err(|e| db_fail!(self, e))?;
+            .map_err(|e| hans!(self, e))?;
         Ok(())
     }
 }

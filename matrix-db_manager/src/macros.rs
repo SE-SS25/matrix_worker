@@ -16,8 +16,8 @@ macro_rules! backoff {
     }};
 }
 
-// TODO Better name
-macro_rules! db_fail {
+// Shoutout to the server
+macro_rules! hans {
     ($self:expr, $e:expr) => {{
         use crate::guard::DbGuard;
         #[allow(unused_imports)]
