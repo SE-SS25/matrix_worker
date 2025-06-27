@@ -25,10 +25,10 @@ db_init: db_only
     sqlx database create
     sqlx migrate run
 
-storage_rm:
+db_rm:
     docker compose down --remove-orphans --volumes
 
-storage_reset: storage_rm db_init
+db_reset: db_rm db_init
 
 cache:
     cargo sqlx prepare --workspace
