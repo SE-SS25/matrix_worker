@@ -8,12 +8,12 @@
         "Uuid",
         "Timestamptz",
         "Interval",
-        "Float4",
-        "Float4",
-        "Float4",
+        "Float8",
+        "Float8",
+        "Float8",
         "Int8",
         "Int8",
-        "Float4"
+        "Float8"
       ]
     },
     "nullable": []

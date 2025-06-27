@@ -35,7 +35,7 @@ impl DbManager {
         let req_per_sec = read_per_sec + write_per_sec;
         let req_total = metrics.get_total_requests() as i64;
         let req_failed = metrics.get_total_fails() as i64;
-        let db_avail = (req_failed as f32) / (req_total as f32);
+        let db_avail = (req_failed as f64) / (req_total as f64);
 
         debug!(%id, ?uptime, req_total, req_per_sec, req_failed);
 

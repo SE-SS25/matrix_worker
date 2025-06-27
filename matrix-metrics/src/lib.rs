@@ -75,22 +75,22 @@ impl Metrics {
         guard.push_back(now);
     }
 
-    pub fn read_ps(&self) -> f32 {
+    pub fn read_ps(&self) -> f64 {
         Self::rps(&self.reads)
     }
-    pub fn write_ps(&self) -> f32 {
+    pub fn write_ps(&self) -> f64 {
         Self::rps(&self.writes)
     }
 
-    fn rps(lock: &MetricStore) -> f32 {
+    fn rps(lock: &MetricStore) -> f64 {
         let now = Instant::now();
         let guard = lock.read();
         let reqs_in_win = guard
             .iter()
             .filter(|req_ts| now.duration_since(**req_ts) <= METRIC_TTL)
-            .count() as f32;
+            .count() as f64;
 
-        reqs_in_win / (METRIC_TTL_SECS as f32)
+        reqs_in_win / (METRIC_TTL_SECS as f64)
     }
 
     pub fn get_total_requests(&self) -> u64 {

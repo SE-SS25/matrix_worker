@@ -21,17 +21,17 @@
       {
         "ordinal": 3,
         "name": "req_per_sec",
-        "type_info": "Float4"
+        "type_info": "Float8"
       },
       {
         "ordinal": 4,
         "name": "read_per_sec",
-        "type_info": "Float4"
+        "type_info": "Float8"
       },
       {
         "ordinal": 5,
         "name": "write_per_sec",
-        "type_info": "Float4"
+        "type_info": "Float8"
       },
       {
         "ordinal": 6,
@@ -46,7 +46,7 @@
       {
         "ordinal": 8,
         "name": "db_err_rate",
-        "type_info": "Float4"
+        "type_info": "Float8"
       }
     ],
     "parameters": {
