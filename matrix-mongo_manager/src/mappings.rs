@@ -39,6 +39,7 @@ pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
         .iter()
         .find(|m| *m.from <= *namespace && *m.to >= *namespace)
         .and_then(|m| guard.managers.get(&m.url))
+    // NOTE Not sure how much I like it, technically it should be impossible to not find one, but still...
     {
         return Ok(manager.clone());
     }
@@ -64,6 +65,42 @@ pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
 }
 
 #[instrument]
-pub(super) async fn read_manager(namespace: &str) -> Vec<MongoManager> {
-    todo!()
+pub(super) async fn read_manager(namespace: &str) -> Result<Vec<MongoManager>> {
+    let guard = MONGO_MAPPINGS_MANAGER.read().await;
+
+    let mut managers = guard
+        .migration_instances
+        .iter()
+        .find(|m| *m.from <= *namespace && *m.to >= *namespace)
+        .and_then(|m| guard.managers.get(&m.url))
+        .map_or_else(
+            || Vec::with_capacity(1),
+            |m| {
+                let mut v = Vec::with_capacity(2);
+                v.push(m.clone());
+                v
+            },
+        );
+
+    if guard.instances.is_empty() {
+        warn!("Write request received, but no Mongo DBs are registered");
+        bail!("No Mongo instance available");
+    }
+
+    let instance = guard
+        .instances
+        .windows(2)
+        .find(|w| *w[1].url > *namespace)
+        .map(|w| &w[0])
+        .unwrap_or(&guard.instances.last().unwrap());
+
+    let manager = guard
+        .managers
+        .get(&instance.url)
+        .ok_or_else(|| anyhow!("No instance for url (this should not be possible)"))
+        .map(|m| m.clone())?;
+
+    managers.push(manager);
+
+    Ok(managers)
 }
