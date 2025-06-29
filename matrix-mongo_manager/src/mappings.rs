@@ -1,9 +1,9 @@
 use crate::MongoManager;
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use std::collections::HashMap;
 use std::sync::LazyLock;
-use tokio::sync::RwLock;
-use tracing::{instrument, warn};
+use tokio::sync::{RwLock, RwLockReadGuard};
+use tracing::instrument;
 use uuid::Uuid;
 
 pub static MONGO_MAPPINGS_MANAGER: LazyLock<RwLock<Mappings>> = LazyLock::new(|| RwLock::default());
@@ -57,23 +57,9 @@ pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
         return Ok(manager.clone());
     }
 
-    if guard.instances.is_empty() {
-        warn!("Write request received, but no Mongo DBs are registered");
-        bail!("No Mongo instance available");
-    }
+    let manager = get_manager_for_instance(&namespace, &guard)
+        .context("Unable to get write instance manager")?;
 
-    let instance = guard
-        .instances
-        .windows(2)
-        .find(|w| *w[1].url > *namespace)
-        .map(|w| &w[0])
-        .unwrap_or(&guard.instances.last().unwrap()); // We can unwrap because we know it is not empty
-
-    let manager = guard
-        .managers
-        .get(&instance.url)
-        .ok_or_else(|| anyhow!("No instance for url (this should not be possible)"))
-        .map(|m| m.clone())?;
     Ok(manager)
 }
 
@@ -110,8 +96,37 @@ pub(super) async fn read_manager(namespace: &str) -> Result<Vec<MongoManager>> {
             },
         );
 
+    let manager = get_manager_for_instance(&namespace, &guard)
+        .context("Unable to get read instance manager")?;
+
+    managers.push(manager);
+
+    Ok(managers)
+}
+
+/// Retrieves the appropriate MongoManager instance based on the provided namespace
+/// by searching through available instances in the guard.
+///
+/// The function uses a sliding window approach to find the correct instance based on URL ranges.
+/// If no exact match is found, it defaults to the last available instance.
+///
+/// # Arguments
+///
+/// * `namespace`: The namespace string used to determine which MongoDB instance should be used
+/// * `guard`: Read guard containing the current MongoDB instances and managers
+///
+/// # Returns
+///
+/// Returns a Result containing either:
+/// * `Ok(MongoManager)`: The MongoDB manager instance that matches the namespace
+/// * `Err`: If no instances are available or if no manager exists for the matched instance
+///
+#[instrument(skip_all)]
+fn get_manager_for_instance(
+    namespace: &str,
+    guard: &RwLockReadGuard<'_, Mappings>,
+) -> Result<MongoManager> {
     if guard.instances.is_empty() {
-        warn!("Write request received, but no Mongo DBs are registered");
         bail!("No Mongo instance available");
     }
 
@@ -128,7 +143,5 @@ pub(super) async fn read_manager(namespace: &str) -> Result<Vec<MongoManager>> {
         .ok_or_else(|| anyhow!("No instance for url (this should not be possible)"))
         .map(|m| m.clone())?;
 
-    managers.push(manager);
-
-    Ok(managers)
+    Ok(manager)
 }
