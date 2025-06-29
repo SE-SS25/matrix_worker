@@ -1,11 +1,12 @@
 use crate::DbManager;
 use anyhow::{Context, Result};
+use futures::future;
+use itertools::Itertools;
 use matrix_mongo_manager::MongoManager;
 use matrix_mongo_manager::mappings::{
     Instance, MONGO_MAPPINGS_MANAGER, Mappings, MigrationInstance,
 };
 use sqlx::query_as;
-use std::collections::HashMap;
 use std::time::Duration;
 use tokio::sync::RwLockWriteGuard;
 use tokio::time::sleep;
@@ -88,8 +89,7 @@ impl DbManager {
 
     #[instrument(skip_all)]
     async fn set_mongo_mapping_guards(&self, mappings: &mut RwLockWriteGuard<'_, Mappings>) {
-        let mut map = HashMap::new();
-        let tmp_map = mappings
+        let futures = mappings
             .migration_instances
             .iter()
             .map(|i| (i.url.as_str(), i.id))
@@ -99,14 +99,13 @@ impl DbManager {
                     .iter()
                     .map(|mi| (mi.url.as_str(), mi.id)),
             )
-            .collect::<HashMap<_, _>>();
-        for (k, v) in tmp_map {
-            if map.contains_key(k) {
-                continue;
-            }
-            let manager = MongoManager::new(k, v).await;
-            map.insert(k.to_string(), manager);
-        }
-        mappings.managers = map;
+            .unique_by(|(url, _)| *url)
+            .map(|(url, id)| async move {
+                let manager = MongoManager::new(url, id).await;
+                (url.to_string(), manager)
+            })
+            .collect::<Vec<_>>();
+
+        mappings.managers = future::join_all(futures).await.into_iter().collect();
     }
 }
