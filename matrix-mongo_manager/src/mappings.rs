@@ -30,6 +30,19 @@ pub struct MigrationInstance {
     pub to: String,
 }
 
+/// Gets the appropriate MongoManager instance for writing data based on the provided namespace.
+/// The function searches through migration instances and regular instances to find the matching MongoDB instance.
+///
+/// # Arguments
+///
+/// * `namespace`: The namespace string used to determine which MongoDB instance should handle the write operation
+///
+/// # Returns
+///
+/// Returns a Result containing either:
+/// - Ok(MongoManager): The MongoDB manager instance that should handle the write
+/// - Err: If no suitable MongoDB instance is found or other errors occur
+///
 #[instrument]
 pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
     let guard = MONGO_MAPPINGS_MANAGER.read().await;
@@ -64,6 +77,21 @@ pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
     Ok(manager)
 }
 
+/// Gets the appropriate MongoManager instances for reading data based on the provided namespace.
+/// The function returns a vector of MongoManager instances that can contain either:
+/// - One manager (capacity=1): When no migration is in progress and only the regular instance is used
+/// - Two managers (capacity=2): During migration when both old and new instances need to be queried
+///
+/// # Arguments
+///
+/// * `namespace`: The namespace string used to determine which MongoDB instance(s) should handle the read operation
+///
+/// # Returns
+///
+/// Returns a Result containing either:
+/// - Ok(Vec<MongoManager>): One or two MongoDB manager instances that should handle the read
+/// - Err: If no suitable MongoDB instance is found or other errors occur
+///
 #[instrument]
 pub(super) async fn read_manager(namespace: &str) -> Result<Vec<MongoManager>> {
     let guard = MONGO_MAPPINGS_MANAGER.read().await;
