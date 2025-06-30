@@ -38,6 +38,7 @@ impl DbManager {
                 guard.instances = mongo_mappings;
                 guard.migration_instances = mongo_migration_mappings;
                 self.set_mongo_mapping_guards(&mut guard).await;
+                debug!("Set mappings");
             }
             sleep(MAP_INTERVAL).await;
         }
@@ -60,7 +61,7 @@ impl DbManager {
         .context("Can't get Mongo mappings")
         .map_err(|e| hans!(self, e))?;
 
-        debug!("Successfully got Mongo mappings");
+        debug!(mappings = ?new_mappings, "Successfully got Mongo mappings");
 
         Ok(new_mappings)
     }
@@ -82,7 +83,7 @@ impl DbManager {
         .context("Can't get Mongo mappings")
         .map_err(|e| hans!(self, e))?;
 
-        debug!("Successfully got Mongo mappings");
+        debug!(mappings = ?new_migration_mappings, "Successfully got Mongo migration mappings");
 
         Ok(new_migration_mappings)
     }

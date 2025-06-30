@@ -3,9 +3,10 @@ use anyhow::{Context, Result, anyhow, bail};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 use tokio::sync::{RwLock, RwLockReadGuard};
-use tracing::instrument;
+use tracing::{debug, instrument};
 use uuid::Uuid;
 
+// TODO Make private (should be pretty easy, as we only need it public to update and we can migrate that logic)
 pub static MONGO_MAPPINGS_MANAGER: LazyLock<RwLock<Mappings>> = LazyLock::new(|| RwLock::default());
 
 #[derive(Debug, Default)]
@@ -126,6 +127,7 @@ fn get_manager_for_instance(
     namespace: &str,
     guard: &RwLockReadGuard<'_, Mappings>,
 ) -> Result<MongoManager> {
+    debug!(instances = ?guard.instances);
     if guard.instances.is_empty() {
         bail!("No Mongo instance available");
     }
@@ -137,6 +139,7 @@ fn get_manager_for_instance(
         .map(|w| &w[0])
         .unwrap_or(&guard.instances.last().unwrap());
 
+    debug!(managers = ?guard.managers);
     let manager = guard
         .managers
         .get(&instance.url)
