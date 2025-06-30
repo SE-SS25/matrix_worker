@@ -6,16 +6,22 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, mpsc};
 use tokio::time::sleep;
 use tracing::{debug, info, instrument, warn};
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct MongoGuard {
+    db_id: Uuid,
     client: Client,
     instance_down: Arc<AtomicBool>,
 }
 
 impl MongoGuard {
     #[instrument(skip_all)]
-    pub(super) fn init(client: &Client, running: &Arc<AtomicBool>) -> Option<Sender<()>> {
+    pub(super) fn init(
+        client: &Client,
+        running: &Arc<AtomicBool>,
+        db_id: Uuid,
+    ) -> Option<Sender<()>> {
         if running
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_err()
@@ -24,6 +30,7 @@ impl MongoGuard {
         }
 
         let guard = Self {
+            db_id,
             client: client.clone(),
             instance_down: running.clone(),
         };
@@ -39,15 +46,16 @@ impl MongoGuard {
     async fn run(self, rx: Receiver<()>) {
         let mut backoff = matrix_commons::DEFAULT_BACKOFF;
         loop {
-            if rx.try_recv().is_ok() {
-                debug!("Manager is down, returning");
-                return;
-            }
             warn!(
+                id = ?self.db_id,
                 "Mongo is down, backing off for {ms}ms",
                 ms = backoff.as_millis()
             );
             sleep(backoff).await;
+            if rx.try_recv().is_ok() {
+                debug!("Manager is down, returning");
+                return;
+            }
             if self.check_conn().await.is_ok() {
                 info!("Mongo is alive again");
                 return;

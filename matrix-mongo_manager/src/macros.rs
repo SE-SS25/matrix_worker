@@ -1,6 +1,5 @@
 macro_rules! backoff {
     ($self:expr) => {{
-        #[allow(unused_imports)]
         use anyhow::{anyhow, bail};
         use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
@@ -20,14 +19,13 @@ macro_rules! backoff {
 macro_rules! fritz {
     ($self:expr, $e:expr) => {{
         use crate::guard::MongoGuard;
-        #[allow(unused_imports)]
         use matrix_errors::MongoErr;
 
         let Some(client) = &$self.client else {
             return MongoErr::InvalidUrl($self.id.to_string());
         };
 
-        if let Some(tx) = MongoGuard::init(client, &$self.guard_running) {
+        if let Some(tx) = MongoGuard::init(client, &$self.guard_running, $self.id) {
             *$self.guard_tx.lock() = Some(tx);
         };
         MongoErr::Unreachable($e)
