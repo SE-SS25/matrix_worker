@@ -91,7 +91,7 @@ impl DbManager {
     #[instrument(skip_all)]
     async fn set_mongo_mapping_guards(&self, mappings: &mut RwLockWriteGuard<'_, Mappings>) {
         let futures = mappings
-            .migration_instances
+            .instances
             .iter()
             .map(|i| (i.url.as_str(), i.id))
             .chain(
