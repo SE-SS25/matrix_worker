@@ -139,7 +139,6 @@ fn get_manager_for_instance(
         .map(|w| &w[0])
         .unwrap_or(&guard.instances.last().unwrap());
 
-    debug!(managers = ?guard.managers);
     let manager = guard
         .managers
         .get(&instance.url)
