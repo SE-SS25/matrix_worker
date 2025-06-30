@@ -7,6 +7,7 @@ use matrix_mongo_manager::mappings::{
     Instance, MONGO_MAPPINGS_MANAGER, Mappings, MigrationInstance,
 };
 use sqlx::query_as;
+use std::process::exit;
 use std::time::Duration;
 use tokio::sync::RwLockWriteGuard;
 use tokio::time::sleep;
@@ -61,6 +62,10 @@ impl DbManager {
         .context("Can't get Mongo mappings")
         .map_err(|e| hans!(self, e))?;
 
+        if new_mappings.is_empty() {
+            error!("No regular Mongo instances found");
+            exit(1);
+        }
         debug!(mappings = ?new_mappings, "Successfully got Mongo mappings");
 
         Ok(new_mappings)
@@ -108,5 +113,9 @@ impl DbManager {
             .collect::<Vec<_>>();
 
         mappings.managers = future::join_all(futures).await.into_iter().collect();
+        if mappings.managers.is_empty() {
+            error!("No Mongo managers available");
+            exit(1);
+        }
     }
 }
