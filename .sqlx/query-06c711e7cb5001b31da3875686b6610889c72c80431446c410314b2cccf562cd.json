@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, url, \"from\", \"to\"\n                FROM db_migration;\n            ",
+  "query": "\n            SELECT id, url, \"from\", \"to\"\n                FROM db_migration\n                ORDER BY \"from\";\n            ",
   "describe": {
     "columns": [
       {
@@ -34,5 +34,5 @@
       false
     ]
   },
-  "hash": "d6376a875a3bde2f0aaf476c2adff54340a60184905e3578043437272ac065ea"
+  "hash": "06c711e7cb5001b31da3875686b6610889c72c80431446c410314b2cccf562cd"
 }

@@ -47,18 +47,18 @@ impl DbManager {
     async fn get_mappings(&self) -> Result<Vec<Instance>> {
         let db_pool = backoff!(self);
 
-        let mut new_mappings = query_as!(
+        let new_mappings = query_as!(
             Instance,
             r#"
             SELECT id, url, "from"
-                FROM db_mapping;
+                FROM db_mapping
+                ORDER BY "from";
             "#
         )
         .fetch_all(db_pool)
         .await
         .context("Can't get Mongo mappings")
         .map_err(|e| hans!(self, e))?;
-        new_mappings.sort_by(|a, b| a.from.cmp(&b.from));
 
         debug!("Successfully got Mongo mappings");
 
@@ -69,18 +69,18 @@ impl DbManager {
     async fn get_migration_mappings(&self) -> Result<Vec<MigrationInstance>> {
         let db_pool = backoff!(self);
 
-        let mut new_migration_mappings = query_as!(
+        let new_migration_mappings = query_as!(
             MigrationInstance,
             r#"
             SELECT id, url, "from", "to"
-                FROM db_migration;
+                FROM db_migration
+                ORDER BY "from";
             "#
         )
         .fetch_all(db_pool)
         .await
         .context("Can't get Mongo mappings")
         .map_err(|e| hans!(self, e))?;
-        new_migration_mappings.sort_by(|a, b| a.from.cmp(&b.from));
 
         debug!("Successfully got Mongo mappings");
 
