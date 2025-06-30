@@ -3,7 +3,8 @@ use matrix_commons::VERSION;
 use matrix_db_manager::DbManager;
 use std::env;
 use std::process::exit;
-use tracing::{Level, info, subscriber};
+use std::time::Duration;
+use tracing::{Level, error, info, subscriber};
 use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
@@ -57,9 +58,19 @@ async fn main() -> Result<()> {
         });
     }
 
-    matrix_server::start(db_manager, metrics)
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    if let Err(e) = matrix_mongo_manager::test()
         .await
-        .context("Failed to start and run HTTP server")?;
+        .context("Test went wrong")
+    {
+        error!(%e, "Oh no");
+        tokio::time::sleep(Duration::from_secs(600)).await;
+    };
+
+    // matrix_server::start(db_manager, metrics)
+    //     .await
+    //     .context("Failed to start and run HTTP server")?;
 
     Ok(())
 }
