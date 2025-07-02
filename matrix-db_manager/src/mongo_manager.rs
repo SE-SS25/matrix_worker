@@ -6,7 +6,7 @@ use matrix_mongo_manager::MongoManager;
 use matrix_mongo_manager::mappings::{
     Instance, MONGO_MAPPINGS_MANAGER, Mappings, MigrationInstance,
 };
-use sqlx::query_as;
+use sqlx::{query, query_as};
 use std::process::exit;
 use std::time::Duration;
 use tokio::sync::RwLockWriteGuard;
@@ -66,7 +66,7 @@ impl DbManager {
             error!("No regular Mongo instances found");
             exit(1);
         }
-        debug!(mappings = ?new_mappings, "Successfully got Mongo mappings");
+        debug!(mappings = ?new_mappings, "Successfully got Mongo mappings"); // TODO This logs credentials
 
         Ok(new_mappings)
     }
@@ -75,8 +75,7 @@ impl DbManager {
     async fn get_migration_mappings(&self) -> Result<Vec<MigrationInstance>> {
         let db_pool = backoff!(self);
 
-        let new_migration_mappings = query_as!(
-            MigrationInstance,
+        let new_migration_records = query!(
             r#"
             SELECT id, url, "from", "to"
                 FROM db_migration
@@ -88,13 +87,44 @@ impl DbManager {
         .context("Can't get Mongo mappings")
         .map_err(|e| hans!(self, e))?;
 
-        debug!(mappings = ?new_migration_mappings, "Successfully got Mongo migration mappings");
+        debug!(mappings = ?new_migration_records, "Successfully got Mongo migration mappings"); // TODO This logs credentials
+
+        let new_migration_mappings = new_migration_records
+            .into_iter()
+            .filter(|r| r.to.is_some())
+            .map(|r| MigrationInstance {
+                id: r.id,
+                url: r.url,
+                from: r.from,
+                to: r.to.unwrap(),
+            })
+            .collect();
 
         Ok(new_migration_mappings)
     }
 
     #[instrument(skip_all)]
     async fn set_mongo_mapping_guards(&self, mappings: &mut RwLockWriteGuard<'_, Mappings>) {
+        let existing_ids = mappings
+            .instances
+            .iter()
+            .map(|i| i.id)
+            .chain(mappings.migration_instances.iter().map(|i| i.id))
+            .collect::<Vec<_>>();
+
+        mappings.managers = mappings
+            .managers
+            .iter()
+            .filter(|(_, m)| existing_ids.contains(&m.db_id))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+
+        let existing_urls = mappings
+            .managers
+            .iter()
+            .map(|(url, _)| url.as_str())
+            .collect::<Vec<_>>();
+
         let futures = mappings
             .instances
             .iter()
@@ -106,13 +136,16 @@ impl DbManager {
                     .map(|mi| (mi.url.as_str(), mi.id)),
             )
             .unique_by(|(url, _)| *url)
+            .filter(|(url, _)| !existing_urls.contains(url))
             .map(|(url, id)| async move {
                 let manager = MongoManager::new(url, id).await;
                 (url.to_string(), manager)
             })
             .collect::<Vec<_>>();
 
-        mappings.managers = future::join_all(futures).await.into_iter().collect();
+        let new_managers = future::join_all(futures).await.into_iter();
+        mappings.managers.extend(new_managers);
+
         if mappings.managers.is_empty() {
             error!("No Mongo managers available");
             exit(1);

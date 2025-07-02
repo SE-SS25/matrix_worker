@@ -60,13 +60,13 @@ async fn main() -> Result<()> {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    if let Err(e) = matrix_mongo_manager::test()
+    while let Err(e) = matrix_mongo_manager::test()
         .await
         .context("Test went wrong")
     {
         error!(%e, "Oh no");
-        tokio::time::sleep(Duration::from_secs(600)).await;
-    };
+        tokio::time::sleep(Duration::from_secs(5)).await;
+    }
 
     // matrix_server::start(db_manager, metrics)
     //     .await

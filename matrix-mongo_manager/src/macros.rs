@@ -1,15 +1,16 @@
 macro_rules! backoff {
     ($self:expr) => {{
+        #[allow(unused_imports)]
         use anyhow::{anyhow, bail};
         use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
 
         // TODO Write in err db if err
-        if $self.guard_running.load(Ordering::SeqCst) {
+        if $self.db_has_problem.load(Ordering::SeqCst) {
             bail!(MongoErr::Unreachable(anyhow!("Unreachable")));
         }
-        let Some(client) = &$self.client else {
-            bail!(MongoErr::InvalidUrl($self.id.to_string()));
+        let Some(client) = &*$self.client else {
+            bail!(MongoErr::InvalidUrl($self.db_id.to_string()));
         };
 
         client
@@ -18,16 +19,16 @@ macro_rules! backoff {
 
 macro_rules! fritz {
     ($self:expr, $e:expr) => {{
+        #[allow(unused_imports)]
         use crate::guard::MongoGuard;
+        use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
 
-        let Some(client) = &$self.client else {
-            return MongoErr::InvalidUrl($self.id.to_string());
+        if $self.client.is_none() {
+            return MongoErr::InvalidUrl($self.db_id.to_string());
         };
 
-        if let Some(tx) = MongoGuard::init(client, &$self.guard_running, $self.id) {
-            *$self.guard_tx.lock() = Some(tx);
-        };
+        $self.db_has_problem.store(true, Ordering::SeqCst);
         MongoErr::Unreachable($e)
     }};
 }

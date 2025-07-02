@@ -21,6 +21,7 @@ use tracing::{debug, error, info, instrument};
 #[cfg(unix)]
 const DOCKER_SHUTDOWN_SIG_NUM: i32 = 15;
 
+#[allow(dead_code)] // TODO Remove when in use
 const INTERNAL_ERR_MSG: &str = "Internal Server Error";
 
 #[derive(Debug, Clone)]
