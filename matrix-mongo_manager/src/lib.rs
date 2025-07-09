@@ -3,11 +3,13 @@ mod macros;
 pub mod guard;
 mod hook;
 pub mod mappings;
+mod messaging;
 pub mod user;
 
 use crate::guard::MongoGuard;
 use crate::hook::{MongoHook, MongoHookT};
 use anyhow::{Context, Result};
+use either::Either;
 use mongodb::Client;
 use mongodb::options::ClientOptions;
 use serde::Deserialize;
@@ -51,9 +53,9 @@ pub async fn test() -> Result<()> {
         .await
         .context("Can't get read manager")?;
 
-    let Some(manager) = manager.get(0) else {
-        error!("No manager");
-        return Ok(());
+    let manager = match manager {
+        Either::Left(m) => m,
+        Either::Right((m, _)) => m,
     };
 
     manager.read(&db, &col).await.context("Can't read")?;

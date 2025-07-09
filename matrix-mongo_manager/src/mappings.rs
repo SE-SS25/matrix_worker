@@ -1,5 +1,6 @@
 use crate::MongoManager;
 use anyhow::{Context, Result, anyhow, bail};
+use either::Either;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 use tokio::sync::{RwLock, RwLockReadGuard};
@@ -80,29 +81,26 @@ pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
 /// - Err: If no suitable MongoDB instance is found or other errors occur
 ///
 #[instrument]
-pub(super) async fn read_manager(namespace: &str) -> Result<Vec<MongoManager>> {
+pub(super) async fn read_manager(
+    namespace: &str,
+) -> Result<Either<MongoManager, (MongoManager, MongoManager)>> {
     let guard = MONGO_MAPPINGS_MANAGER.read().await;
 
-    let mut managers = guard
+    let migration_manager = guard
         .migration_instances
         .iter()
         .find(|m| *m.from <= *namespace && *m.to >= *namespace)
         .and_then(|m| guard.managers.get(&m.url))
-        .map_or_else(
-            || Vec::with_capacity(1),
-            |m| {
-                let mut v = Vec::with_capacity(2);
-                v.push(m.clone());
-                v
-            },
-        );
+        .map(|m| m.clone());
 
     let manager = get_manager_for_instance(&namespace, &guard)
         .context("Unable to get read instance manager")?;
 
-    managers.push(manager);
-
-    Ok(managers)
+    let res = match migration_manager {
+        Some(mig_man) => either::Right((manager, mig_man)),
+        None => either::Left(manager),
+    };
+    Ok(res)
 }
 
 /// Retrieves the appropriate MongoManager instance based on the provided namespace
