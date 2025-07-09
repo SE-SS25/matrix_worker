@@ -1,8 +1,10 @@
+mod messages;
+
 use anyhow::{Context, Result};
 use axum::extract::Request;
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::response::IntoResponse;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Router, ServiceExt};
 use matrix_commons::VERSION;
 use matrix_db_manager::DbManager;
@@ -56,9 +58,12 @@ pub async fn start(db_manager: DbManager, metrics: MetricsWrapper) -> Result<()>
 
     info!(port, "Starting server");
 
+    let v1_router = Router::new().route("/sendmessage", post(messages::send));
+
     let app = Router::new()
         .route("/version", get(version))
         .route("/robots.txt", get(robots))
+        .nest("/v1", v1_router)
         .with_state(state)
         .layer(cors);
 
