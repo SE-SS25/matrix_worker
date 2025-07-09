@@ -3,7 +3,8 @@ use matrix_commons::VERSION;
 use matrix_db_manager::DbManager;
 use std::env;
 use std::process::exit;
-use tracing::{Level, info, subscriber};
+use std::time::Duration;
+use tracing::{Level, error, info, subscriber};
 use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
@@ -35,24 +36,41 @@ async fn main() -> Result<()> {
 
     info!("Starting matrix worker v{VERSION}");
 
-    let (db_manager, mongo_client) =
-        tokio::try_join!(DbManager::new(), matrix_mongo_manager::init(),)
-            .context("Failed to initialize data stores")?;
+    let db_manager = DbManager::new()
+        .await
+        .context("Failed to initialize DB Manager")?;
 
-    db_manager.migrate().await.context("Migration failed")?;
+    db_manager.migrate().await.context("DB Migration failed")?;
+
+    {
+        let db_manager = db_manager.clone();
+        tokio::spawn(async move {
+            db_manager.manage_mongo().await;
+        });
+    }
 
     let metrics = matrix_metrics::Metrics::new();
     {
         let db_manager = db_manager.clone();
         let metrics = metrics.clone();
         tokio::spawn(async move {
-            db_manager.manage(metrics).await;
+            db_manager.manage_metrics(metrics).await;
         });
     }
 
-    matrix_server::start(db_manager, mongo_client, metrics)
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    while let Err(e) = matrix_mongo_manager::test()
         .await
-        .context("Failed to start and run HTTP server")?;
+        .context("Test went wrong")
+    {
+        error!(%e, "Oh no");
+        tokio::time::sleep(Duration::from_secs(5)).await;
+    }
+
+    // matrix_server::start(db_manager, metrics)
+    //     .await
+    //     .context("Failed to start and run HTTP server")?;
 
     Ok(())
 }

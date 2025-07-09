@@ -6,6 +6,8 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+futures.workspace = true
+itertools.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -15,3 +17,4 @@ matrix-commons.workspace = true
 matrix-errors.workspace = true
 matrix-macros.workspace = true
 matrix-metrics.workspace = true
+matrix-mongo_manager.workspace = true

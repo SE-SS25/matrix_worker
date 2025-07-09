@@ -1,16 +1,13 @@
-mod user;
-
 use anyhow::{Context, Result};
 use axum::extract::Request;
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::response::IntoResponse;
-use axum::routing::{get, post};
+use axum::routing::get;
 use axum::{Router, ServiceExt};
 use matrix_commons::VERSION;
 use matrix_db_manager::DbManager;
 use matrix_macros::get_env;
 use matrix_metrics::MetricsWrapper;
-use matrix_mongo_manager::MongoClient;
 use std::sync::atomic::Ordering;
 use tokio::net::TcpListener;
 #[cfg(unix)]
@@ -24,22 +21,18 @@ use tracing::{debug, error, info, instrument};
 #[cfg(unix)]
 const DOCKER_SHUTDOWN_SIG_NUM: i32 = 15;
 
+#[allow(dead_code)] // TODO Remove when in use
 const INTERNAL_ERR_MSG: &str = "Internal Server Error";
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)] // TODO Remove
 struct AppState {
     db_manager: DbManager,
-    client: MongoClient,
     metrics: MetricsWrapper,
 }
 
 #[instrument(name = "start server", skip_all)]
-pub async fn start(
-    db_manager: DbManager,
-    client: MongoClient,
-    metrics: MetricsWrapper,
-) -> Result<()> {
+pub async fn start(db_manager: DbManager, metrics: MetricsWrapper) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
     debug!(%allow_origin);
@@ -58,7 +51,6 @@ pub async fn start(
 
     let state = AppState {
         db_manager,
-        client,
         metrics,
     };
 
@@ -67,9 +59,6 @@ pub async fn start(
     let app = Router::new()
         .route("/version", get(version))
         .route("/robots.txt", get(robots))
-        .route("/user/create", post(user::add_user))
-        .route("/user", get(user::get_all_users))
-        .route("/user/{name}", get(user::get_user_by_name))
         .with_state(state)
         .layer(cors);
 

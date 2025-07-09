@@ -12,6 +12,7 @@ pub struct DbGuard {
 }
 
 impl DbGuard {
+    #[instrument]
     pub fn is_running(ord: Ordering) -> bool {
         DB_GUARD_RUNNING.load(ord)
     }
@@ -59,6 +60,7 @@ impl DbGuard {
 }
 
 impl Drop for DbGuard {
+    #[instrument(skip_all)]
     fn drop(&mut self) {
         DB_GUARD_RUNNING.store(false, Ordering::Relaxed)
     }

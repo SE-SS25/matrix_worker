@@ -9,12 +9,16 @@
     <file url="file://$PROJECT_DIR$/migrations/20250620101115_controller_status.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620101305_migration_worker.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620101305_migration_worker.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migrations/20250620101425_db_instance.down.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migrations/20250620101425_db_instance.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620101426_monitor.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620101426_monitor.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620102630_db_mapping.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620102630_db_mapping.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620102811_db_conn_err.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620102811_db_conn_err.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migrations/20250620104256_db_migration_status.down.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migrations/20250620104256_db_migration_status.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620104257_db_migration.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620104257_db_migration.up.sql" dialect="PostgreSQL" />
   </component>

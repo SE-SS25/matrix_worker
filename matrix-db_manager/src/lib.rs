@@ -2,6 +2,7 @@
 mod macros;
 pub mod guard;
 pub mod metrics_manager;
+mod mongo_manager;
 
 use anyhow::{Context, Result, anyhow, bail};
 use matrix_errors::DbErr::Unreachable;
@@ -38,6 +39,7 @@ impl DbManager {
         {
             bail!("Can't create the DbManager more than once! (You can clone it tho)");
         }
+
         let db_url = get_env!("DATABASE_URL");
 
         debug!("Connecting to database"); // URL not shown because of credentials

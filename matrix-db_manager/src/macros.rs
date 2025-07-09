@@ -21,7 +21,6 @@ macro_rules! hans {
     ($self:expr, $e:expr) => {{
         use crate::guard::DbGuard;
         #[allow(unused_imports)]
-        use anyhow::{anyhow, bail};
         use matrix_errors::DbErr;
 
         DbGuard::init(&$self.db_pool);

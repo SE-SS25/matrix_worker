@@ -11,8 +11,8 @@ use tracing::{debug, error, instrument, warn};
 const PERSIST_INTERVAL: Duration = Duration::from_secs(10);
 
 impl DbManager {
-    #[instrument(name = "manage metrics", skip_all)]
-    pub async fn manage(&self, metrics: MetricsWrapper) {
+    #[instrument(skip_all)]
+    pub async fn manage_metrics(self, metrics: MetricsWrapper) {
         let startup = Instant::now();
         loop {
             debug!("Persisting metrics");
