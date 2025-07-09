@@ -4,7 +4,7 @@ use matrix_db_manager::DbManager;
 use std::env;
 use std::process::exit;
 use std::time::Duration;
-use tracing::{Level, error, info, subscriber};
+use tracing::{Level, info, subscriber};
 use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
@@ -60,17 +60,9 @@ async fn main() -> Result<()> {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    while let Err(e) = matrix_mongo_manager::test()
+    matrix_server::start(db_manager, metrics)
         .await
-        .context("Test went wrong")
-    {
-        error!(%e, "Oh no");
-        tokio::time::sleep(Duration::from_secs(5)).await;
-    }
-
-    // matrix_server::start(db_manager, metrics)
-    //     .await
-    //     .context("Failed to start and run HTTP server")?;
+        .context("Failed to start and run HTTP server")?;
 
     Ok(())
 }
