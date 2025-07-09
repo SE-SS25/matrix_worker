@@ -1460,7 +1460,6 @@ dependencies = [
  "matrix-commons",
  "matrix-db_manager",
  "matrix-metrics",
- "matrix-mongo_manager",
  "matrix-server",
  "tokio",
  "tracing",

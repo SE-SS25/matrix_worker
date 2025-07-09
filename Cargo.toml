@@ -62,6 +62,5 @@ tracing.workspace = true
 matrix-commons.workspace = true
 matrix-db_manager.workspace = true
 matrix-metrics.workspace = true
-matrix-mongo_manager.workspace = true
 matrix-server.workspace = true
 
