@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tracing::{debug, error, instrument, warn};
 
-const PERSIST_INTERVAL: Duration = Duration::from_secs(10);
+const PERSIST_INTERVAL: Duration = Duration::from_secs(5);
 
 impl DbManager {
     #[instrument(skip_all)]
