@@ -6,8 +6,11 @@ use bson::DateTime;
 use chrono::Utc;
 use matrix_mongo_manager::messaging;
 use serde::Deserialize;
+use serde_json::json;
 use std::collections::HashMap;
 use tracing::{Span, instrument, warn};
+
+const ERR_KEY: &str = "err";
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct RoomConfig {
@@ -70,24 +73,31 @@ pub(crate) async fn read(
     Path(room): Path<String>,
     Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    let Some(n) = params.get("n") else {
-        return (StatusCode::BAD_REQUEST, "n is not set".to_string());
+    const N_KEY: &str = "n";
+    let Some(n) = params.get(N_KEY) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ERR_KEY: format!("{N_KEY:} is not set")})),
+        );
     };
     let Ok(n) = n.parse::<u32>() else {
         return (
             StatusCode::BAD_REQUEST,
-            format!("n={n:?} is not a valid u32"),
+            Json(json!({ERR_KEY: format!("{N_KEY}={n:?} is not a valid u32")})),
         );
     };
 
     match matrix_mongo_manager::MongoManager::read_messages(&room, n).await {
         Ok(x) => {
             tracing::info!(?x);
-            (StatusCode::OK, "Hi".to_string())
+            (StatusCode::OK, Json(json!({})))
         }
         Err(e) => {
             warn!(?e, "Failed to get messages");
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ERR_KEY: e.to_string()})),
+            )
         }
     }
 }

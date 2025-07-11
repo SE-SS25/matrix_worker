@@ -1426,6 +1426,7 @@ dependencies = [
  "matrix-metrics",
  "matrix-mongo_manager",
  "serde",
+ "serde_json",
  "tokio",
  "tower",
  "tower-http",
