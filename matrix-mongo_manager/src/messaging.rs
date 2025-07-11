@@ -135,12 +135,30 @@ impl MongoManager {
             .await
             .context("Can't list connections")?;
 
-        let mut cnt = 0u32;
+        let mut names = vec![];
 
         loop {
             match col_cursor.advance().await {
                 Ok(true) => {
-                    cnt += 1;
+                    let x = col_cursor.current();
+                    let name = x
+                        .get("name")
+                        .context("Can't execute get call for collection")?
+                        .context("Name of collection is not set")?;
+                    let name = name.as_str().unwrap_or("").to_string();
+                    warn!(?name);
+                    if !name.starts_with(CHAT_PREFIX) {
+                        error!(name, "Invalid collection name found");
+                        bail!("Internal server error");
+                    }
+                    let index = name[CHAT_PREFIX.len() + 1..]
+                        .parse::<u32>()
+                        .map_err(|e| {
+                            error!(name, "Invalid collection name found (no '_' after prefix, or invalid num at end)");
+                            e
+                        })
+                        .context("Internal server error")?;
+                    names.push(index);
                 }
                 Ok(false) => break,
                 Err(e) => {
@@ -149,13 +167,13 @@ impl MongoManager {
                 }
             };
         }
-        error!(cnt);
-        if cnt == 0 {
+        names.sort_unstable();
+        error!(?names);
+        if names.is_empty() {
             Ok(Err(MatrixErr::RoomNotFound(room.to_string())))
-        } else if cnt == 1 {
-            Ok(Ok((format!("{CHAT_PREFIX}_1"), 2)))
         } else {
-            Ok(Ok((format!("{CHAT_PREFIX}_{n}", n = cnt - 1), cnt)))
+            let count = names[names.len() - 1].max(1);
+            Ok(Ok((format!("{CHAT_PREFIX}_{count}"), count + 1)))
         }
     }
 
