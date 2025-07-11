@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    matrix_server::start(db_manager, metrics)
+    matrix_server::start(metrics)
         .await
         .context("Failed to start and run HTTP server")?;
 
