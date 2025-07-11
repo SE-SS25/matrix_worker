@@ -14,3 +14,13 @@ pub enum MongoErr {
     #[error("Invalid Mongo URL for id: {0:?}")]
     InvalidUrl(String),
 }
+
+#[derive(Debug, Error)]
+pub enum MatrixErr {
+    #[error("The room {0:?} does not exist")]
+    RoomNotFound(String),
+    #[error("You are not a member of room {0:?}")]
+    NotInRoom(String),
+    #[error("General error: {0}")]
+    General(#[from] anyhow::Error),
+}

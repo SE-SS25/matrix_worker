@@ -3,7 +3,7 @@ mod macros;
 pub mod guard;
 mod hook;
 pub mod mappings;
-mod messaging;
+pub mod messaging;
 pub mod user;
 
 use crate::guard::MongoGuard;

@@ -8,7 +8,7 @@ use tracing::{debug, instrument};
 use uuid::Uuid;
 
 // TODO Make private (should be pretty easy, as we only need it public to update and we can migrate that logic)
-pub static MONGO_MAPPINGS_MANAGER: LazyLock<RwLock<Mappings>> = LazyLock::new(|| RwLock::default());
+pub static MONGO_MAPPINGS_MANAGER: LazyLock<RwLock<Mappings>> = LazyLock::new(RwLock::default);
 
 #[derive(Debug, Default)]
 pub struct Mappings {

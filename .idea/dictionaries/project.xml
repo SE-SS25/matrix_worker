@@ -6,6 +6,7 @@
       <w>basicauth</w>
       <w>caddyfile</w>
       <w>initdb</w>
+      <w>msgs</w>
       <w>ossp</w>
     </words>
   </dictionary>
