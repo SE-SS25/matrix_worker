@@ -8,7 +8,7 @@ use tracing::{debug, error, info, instrument, warn};
 
 const INVALID_ROOM_NAMES: &[&str] = &["admin", "config", "local"];
 const CHAT_PREFIX: &str = "chat";
-const MAX_MSGS_PER_COL: u64 = 100;
+const MAX_MSGS_PER_COL: u64 = 3;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RoomConfig {
@@ -17,7 +17,7 @@ pub struct RoomConfig {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Message {
-    pub user: String,
+    pub author: String,
     pub content: String,
     pub timestamp: DateTime,
 }
@@ -39,12 +39,21 @@ impl MongoManager {
         Ok(room_name)
     }
 
-    #[instrument(skip(message))]
+    #[instrument(skip_all)]
     pub async fn write_message(room: &str, message: Message) -> Result<()> {
         let room = room.to_lowercase();
         let manager = mappings::write_manager(&room)
             .await
             .with_context(|| format!("Can't get manager for room {room}"))?;
+
+        if !manager
+            .check_access(&room, &message.author)
+            .await
+            .context("Unable to check access")
+            .map_err(|e| fritz!(manager, e))?
+        {
+            bail!("No access")
+        }
 
         let (col, next_id) = manager
             .get_chat_collection(&room)
@@ -140,13 +149,14 @@ impl MongoManager {
                 }
             };
         }
+        error!(cnt);
         if cnt == 0 {
-            return Ok(Err(MatrixErr::RoomNotFound(room.to_string())));
+            Ok(Err(MatrixErr::RoomNotFound(room.to_string())))
+        } else if cnt == 1 {
+            Ok(Ok((format!("{CHAT_PREFIX}_1"), 2)))
+        } else {
+            Ok(Ok((format!("{CHAT_PREFIX}_{n}", n = cnt - 1), cnt)))
         }
-
-        debug!("Found {cnt} collection{}", if cnt == 1 { "" } else { "s" });
-
-        Ok(Ok((format!("{CHAT_PREFIX}_{n}", n = cnt - 1), cnt)))
     }
 
     #[instrument(skip(self, room))]
@@ -158,15 +168,39 @@ impl MongoManager {
             .await
             .context("Can't get doc count")?;
 
-        if doc_count <= MAX_MSGS_PER_COL {
+        if doc_count < MAX_MSGS_PER_COL {
+            // If == it's already full
+            debug!(doc_count, "Returning original name");
             Ok(col_name)
         } else {
-            Ok(format!("{CHAT_PREFIX}_{next_num}"))
+            let new_name = format!("{CHAT_PREFIX}_{next_num}");
+            debug!(
+                new_name,
+                doc_count, "Maximum reached, writing in new collection"
+            );
+            Ok(new_name)
         }
+    }
+
+    #[instrument(skip(self, room))]
+    async fn check_access(&self, room: &str, user_name: &String) -> Result<bool> {
+        let col_name = format!("{CHAT_PREFIX}_0");
+        let is_allowed = backoff!(self)
+            .database(&room)
+            .collection::<RoomConfig>(&col_name)
+            .find_one(bson::doc! {})
+            .await
+            .context("Unable to get config")?
+            .context("No conf in room (how?)")?
+            .allowed_users
+            .contains(user_name);
+
+        Ok(is_allowed)
     }
 
     #[instrument(skip(self, room, msg))]
     async fn write(&self, room: &str, collection: &str, msg: &Message) -> Result<()> {
+        debug!("Writing message");
         let client = backoff!(self);
         let col = client.database(&room).collection::<Message>(&collection);
         col.insert_one(msg).await.context("Failed to insert msg")?;

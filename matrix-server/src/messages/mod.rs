@@ -49,7 +49,7 @@ pub(crate) async fn send(Json(payload): Json<SendMessage>) -> impl IntoResponse 
     if let Err(e) = matrix_mongo_manager::MongoManager::write_message(
         &payload.room,
         messaging::Message {
-            user: payload.user,
+            author: payload.user,
             content: payload.msg,
             timestamp: DateTime::from_chrono(Utc::now()),
         },
