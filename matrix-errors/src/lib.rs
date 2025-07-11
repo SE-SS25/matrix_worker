@@ -17,10 +17,14 @@ pub enum MongoErr {
 
 #[derive(Debug, Error)]
 pub enum MatrixErr {
+    #[error("Room {0:?} already exists, can't create")]
+    RoomAlreadyExists(String),
+    #[error("Room name {0:?} is not allowed")]
+    IllegalRoomName(String),
     #[error("The room {0:?} does not exist")]
     RoomNotFound(String),
     #[error("You are not a member of room {0:?}")]
     NotInRoom(String),
     #[error("General error: {0}")]
-    General(#[from] anyhow::Error),
+    General(String),
 }

@@ -7,14 +7,39 @@ use bson::DateTime;
 use chrono::Utc;
 use matrix_mongo_manager::messaging;
 use serde::Deserialize;
-use tracing::{Span, error, instrument};
+use tracing::{Span, instrument, warn};
 
-#[allow(unused)] // TODO Remove once password impl is solved
+#[derive(Debug, Deserialize)]
+pub(crate) struct RoomConfig {
+    name: String,
+    allowed_users: Vec<String>,
+}
+
 #[derive(Debug, Deserialize)]
 pub(crate) struct SendMessage {
     user: String,
     room: String,
     msg: String,
+}
+
+#[instrument(skip_all, fields(room))]
+pub(crate) async fn create_room(Json(config): Json<RoomConfig>) -> impl IntoResponse {
+    Span::current().record("room", &config.name);
+
+    match matrix_mongo_manager::MongoManager::add_room(
+        &config.name,
+        messaging::RoomConfig {
+            allowed_users: config.allowed_users,
+        },
+    )
+    .await
+    {
+        Ok(name) => (StatusCode::CREATED, format!("Created room {name:?}")),
+        Err(e) => {
+            warn!(?e, "Failed to add room");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        }
+    }
 }
 
 #[instrument(skip_all, fields(user, room, msg))]
@@ -36,9 +61,9 @@ pub(crate) async fn send(
     )
     .await
     {
-        error!(?e, "Failed to post message");
-        return (StatusCode::INTERNAL_SERVER_ERROR, "Post failed");
+        warn!(?e, "Failed to post message");
+        return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string());
     };
 
-    (StatusCode::CREATED, "Successfully posted")
+    (StatusCode::CREATED, "Successfully posted".to_string())
 }

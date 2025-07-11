@@ -58,7 +58,9 @@ pub async fn start(db_manager: DbManager, metrics: MetricsWrapper) -> Result<()>
 
     info!(port, "Starting server");
 
-    let v1_router = Router::new().route("/sendmessage", post(messages::send));
+    let v1_router = Router::new()
+        .route("/addroom", post(messages::create_room))
+        .route("/sendmessage", post(messages::send));
 
     let app = Router::new()
         .route("/version", get(version))
