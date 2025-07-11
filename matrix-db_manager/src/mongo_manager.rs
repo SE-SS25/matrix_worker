@@ -91,12 +91,11 @@ impl DbManager {
 
         let new_migration_mappings = new_migration_records
             .into_iter()
-            .filter(|r| r.to.is_some())
             .map(|r| MigrationInstance {
                 id: r.id,
                 url: r.url,
                 from: r.from,
-                to: r.to.unwrap(),
+                to: r.to,
             })
             .collect();
 
