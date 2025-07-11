@@ -1,6 +1,4 @@
-use crate::AppState;
 use axum::Json;
-use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use bson::DateTime;
@@ -43,10 +41,7 @@ pub(crate) async fn create_room(Json(config): Json<RoomConfig>) -> impl IntoResp
 }
 
 #[instrument(skip_all, fields(user, room, msg))]
-pub(crate) async fn send(
-    State(state): State<AppState>,
-    Json(payload): Json<SendMessage>,
-) -> impl IntoResponse {
+pub(crate) async fn send(Json(payload): Json<SendMessage>) -> impl IntoResponse {
     Span::current().record("user", &payload.user);
     Span::current().record("room", &payload.room);
     // Span::current().record("msg", &payload.msg); // CONSIDER Remove, can/will be big
