@@ -1,10 +1,12 @@
 use axum::Json;
+use axum::extract::{Path, Query};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use bson::DateTime;
 use chrono::Utc;
 use matrix_mongo_manager::messaging;
 use serde::Deserialize;
+use std::collections::HashMap;
 use tracing::{Span, instrument, warn};
 
 #[derive(Debug, Deserialize)]
@@ -61,4 +63,31 @@ pub(crate) async fn send(Json(payload): Json<SendMessage>) -> impl IntoResponse 
     };
 
     (StatusCode::CREATED, "Successfully posted".to_string())
+}
+
+#[instrument]
+pub(crate) async fn read(
+    Path(room): Path<String>,
+    Query(params): Query<HashMap<String, String>>,
+) -> impl IntoResponse {
+    let Some(n) = params.get("n") else {
+        return (StatusCode::BAD_REQUEST, "n is not set".to_string());
+    };
+    let Ok(n) = n.parse::<u32>() else {
+        return (
+            StatusCode::BAD_REQUEST,
+            format!("n={n:?} is not a valid u32"),
+        );
+    };
+
+    match matrix_mongo_manager::MongoManager::read_messages(&room, n).await {
+        Ok(x) => {
+            tracing::info!(?x);
+            (StatusCode::OK, "Hi".to_string())
+        }
+        Err(e) => {
+            warn!(?e, "Failed to get messages");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        }
+    }
 }

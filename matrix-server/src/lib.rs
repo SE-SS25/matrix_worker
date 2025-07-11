@@ -55,7 +55,8 @@ pub async fn start(metrics: MetricsWrapper) -> Result<()> {
 
     let v1_router = Router::new()
         .route("/addroom", post(messages::create_room))
-        .route("/sendmessage", post(messages::send));
+        .route("/sendmessage", post(messages::send))
+        .route("/post/{room}", get(messages::read));
 
     let app = Router::new()
         .route("/version", get(version))

@@ -75,6 +75,19 @@ impl MongoManager {
 
         Ok(())
     }
+    #[instrument(skip_all)]
+    pub async fn read_messages(room: &str, n: u32) -> Result<()> {
+        let well_well_well = match mappings::read_manager(&room).await {
+            Ok(either::Left(manager)) => {}
+            Ok(either::Right((man, mig_m))) => {}
+            Err(e) => {
+                warn!(?e, "Failed to get migration manager");
+                bail!("Internal server error");
+            }
+        };
+
+        Ok(())
+    }
 
     #[instrument(skip(self, room_name), level = "debug")]
     async fn create_room(

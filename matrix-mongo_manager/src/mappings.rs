@@ -65,21 +65,22 @@ pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
     Ok(manager)
 }
 
-/// Gets the appropriate MongoManager instances for reading data based on the provided namespace.
-/// The function returns a vector of MongoManager instances that can contain either:
-/// - One manager (capacity=1): When no migration is in progress and only the regular instance is used
-/// - Two managers (capacity=2): During migration when both old and new instances need to be queried
+/// Fetches the relevant MongoManager instances for read operations based on the namespace.
+///
+/// - Provides a single manager when no migration is active.
+/// - Provides two managers during a migration for querying both old and new instances.
 ///
 /// # Arguments
 ///
-/// * `namespace`: The namespace string used to determine which MongoDB instance(s) should handle the read operation
+/// * `namespace` - Namespace used to determine which MongoDB instance(s) should handle the read.
 ///
 /// # Returns
 ///
-/// Returns a Result containing either:
-/// - Ok(Vec<MongoManager>): One or two MongoDB manager instances that should handle the read
-/// - Err: If no suitable MongoDB instance is found or other errors occur
-///
+/// A `Result` containing:
+/// - `Ok(Either<MongoManager, (MongoManager, MongoManager)>)`:
+///   - `Left(MongoManager)`: The regular MongoManager instance to handle the read when no migration is in progress.
+///   - `Right((MongoManager, MongoManager))`: Both the regular MongoManager and the migration MongoManager when a migration is in progress **(in that order)**.
+/// - `Err`: If no suitable instance is found or other errors occur.
 #[instrument]
 pub(super) async fn read_manager(
     namespace: &str,
