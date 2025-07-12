@@ -5,7 +5,7 @@ use axum::response::IntoResponse;
 use bson::DateTime;
 use chrono::Utc;
 use matrix_mongo_manager::messaging;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use tracing::{Span, instrument, warn};
@@ -23,6 +23,13 @@ pub(crate) struct SendMessage {
     user: String,
     room: String,
     msg: String,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct ReadMessage {
+    messages: Vec<messaging::Message>,
+    total_messages: usize,
+    collections_read: u32,
 }
 
 #[instrument(skip_all, fields(room))]
@@ -80,17 +87,28 @@ pub(crate) async fn read(
             Json(json!({ERR_KEY: format!("{N_KEY:} is not set")})),
         );
     };
-    let Ok(n) = n.parse::<u32>() else {
+    let Ok(n) = n.parse::<usize>() else {
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({ERR_KEY: format!("{N_KEY}={n:?} is not a valid u32")})),
+            Json(json!({ERR_KEY: format!("{N_KEY}={n:?} is not a valid usize")})),
         );
     };
 
     match matrix_mongo_manager::MongoManager::read_messages(&room, n).await {
-        Ok(x) => {
-            tracing::info!(?x);
-            (StatusCode::OK, Json(json!({})))
+        Ok((messages, col_cnt)) => {
+            let msg_len = messages.len();
+            let resp = ReadMessage {
+                messages,
+                total_messages: msg_len,
+                collections_read: col_cnt,
+            };
+            match serde_json::to_value(&resp) {
+                Ok(val) => (StatusCode::OK, Json(val)),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ERR_KEY: e.to_string()})),
+                ),
+            }
         }
         Err(e) => {
             warn!(?e, "Failed to get messages");

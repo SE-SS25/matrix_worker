@@ -3,6 +3,10 @@ set dotenv-filename := "just.env"
 default:
     @just --list
 
+run:
+    clear
+    cargo run
+
 up:
     docker compose up --build --detach
 

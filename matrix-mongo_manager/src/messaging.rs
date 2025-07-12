@@ -4,8 +4,10 @@ use anyhow::{Context, Result, bail};
 use bson::DateTime;
 use matrix_errors::MatrixErr;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info, instrument, warn};
+use std::collections::HashSet;
+use tracing::{debug, error, info, instrument, trace, warn};
 
+const INTERNAL_ERR_MSG: &str = "Internal server error";
 const INVALID_ROOM_NAMES: &[&str] = &["admin", "config", "local"];
 const CHAT_PREFIX: &str = "chat";
 const MAX_MSGS_PER_COL: u64 = 3;
@@ -15,11 +17,11 @@ pub struct RoomConfig {
     pub allowed_users: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Message {
+    pub timestamp: DateTime,
     pub author: String,
     pub content: String,
-    pub timestamp: DateTime,
 }
 
 impl MongoManager {
@@ -58,7 +60,7 @@ impl MongoManager {
         let (col, next_id) = manager
             .get_chat_collection(&room)
             .await
-            .context("Internal Mongo Error")
+            .context(INTERNAL_ERR_MSG)
             .map_err(|e| fritz!(manager, e))??;
 
         info!(col);
@@ -75,18 +77,31 @@ impl MongoManager {
 
         Ok(())
     }
+
     #[instrument(skip_all)]
-    pub async fn read_messages(room: &str, n: u32) -> Result<()> {
-        let well_well_well = match mappings::read_manager(&room).await {
-            Ok(either::Left(manager)) => {}
-            Ok(either::Right((man, mig_m))) => {}
+    #[allow(unused_variables)]
+    pub async fn read_messages(room: &str, n: usize) -> Result<(Vec<Message>, u32)> {
+        let (messages, cnt) = match mappings::read_manager(&room).await {
+            Ok(either::Left(manager)) => manager
+                .read_n(&room, n)
+                .await
+                .context(INTERNAL_ERR_MSG)
+                .map_err(|e| fritz!(manager, e))??,
+            Ok(either::Right((man, mig_m))) => todo!(),
             Err(e) => {
                 warn!(?e, "Failed to get migration manager");
-                bail!("Internal server error");
+                bail!(INTERNAL_ERR_MSG);
             }
         };
 
-        Ok(())
+        let mut messages = messages
+            .into_iter()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        messages.sort_unstable();
+
+        Ok((messages, cnt))
     }
 
     #[instrument(skip(self, room_name), level = "debug")]
@@ -237,5 +252,135 @@ impl MongoManager {
         col.insert_one(msg).await.context("Failed to insert msg")?;
 
         Ok(())
+    }
+
+    #[instrument(skip_all)]
+    async fn read_n(&self, room: &str, n: usize) -> Result<Result<(Vec<Message>, u32), MatrixErr>> {
+        debug!("Trying to read up to n");
+        let client = backoff!(self);
+
+        let db = client.database(&room);
+        if !self
+            .room_exists(&room)
+            .await
+            .context("Unable to check if room exists")?
+        {
+            return Ok(Err(MatrixErr::RoomNotFound(room.to_string())));
+        }
+        let mut col_cursor = db
+            .list_collections()
+            .await
+            .context("Can't list connections")?;
+
+        let mut names = vec![];
+
+        loop {
+            match col_cursor.advance().await {
+                Ok(true) => {
+                    let collection_name = col_cursor
+                        .current()
+                        .get("name")
+                        .context("Can't execute get call for collection")?
+                        .context("Name of collection is not set")?
+                        .as_str()
+                        .unwrap_or("")
+                        .to_string();
+                    if !collection_name.starts_with(CHAT_PREFIX) {
+                        error!(collection_name, "Invalid collection name found");
+                        bail!("Internal server error");
+                    }
+                    let index = collection_name[CHAT_PREFIX.len() + 1..]
+                        .parse::<u32>()
+                        .map_err(|e| {
+                            error!(collection_name, "Invalid collection name found (no '_' after prefix, or invalid num at end)");
+                            e
+                        })
+                        .context("Internal server error")?;
+                    if index != 0 {
+                        // Skip metadata collection
+                        trace!(index, "Pushing index");
+                        names.push(index);
+                    }
+                }
+                Ok(false) => break,
+                Err(e) => {
+                    error!(?e, "Error while advancing");
+                    bail!("Can't get collection for chat because of an error");
+                }
+            };
+        }
+        names.sort_unstable();
+
+        let mut actual_read = 0;
+        let mut collections_read = 0;
+        let mut messages = vec![];
+
+        for i in (0..names.len()).rev() {
+            let read_col = format!("{CHAT_PREFIX}_{col_idx}", col_idx = names[i]);
+            let new_messages = self
+                .read_collection(&room, &read_col)
+                .await
+                .with_context(|| format!("Failed to read collection {read_col:?}"))?;
+
+            collections_read += 1;
+            actual_read += new_messages.len();
+            messages.extend(new_messages);
+
+            trace!(
+                n = collections_read,
+                collection = read_col,
+                total_read = actual_read,
+                "nth run"
+            );
+            if actual_read >= n {
+                break;
+            }
+        }
+
+        Ok(Ok((messages, collections_read)))
+    }
+
+    #[instrument(skip_all)]
+    async fn room_exists(&self, room: &str) -> Result<bool> {
+        debug!("We are checking");
+        let mut col_cursor = backoff!(self)
+            .database(&room)
+            .list_collections()
+            .await
+            .context("Can't list connections")?;
+
+        let exists = col_cursor.advance().await.context("Can't advance cursor")?;
+        debug!(exists, "We have checked");
+        Ok(exists)
+    }
+
+    #[instrument(skip(self, room))]
+    async fn read_collection(&self, room: &str, col: &str) -> Result<Vec<Message>> {
+        let col = backoff!(self).database(&room).collection::<Message>(&col);
+        let mut msg_cursor = col
+            .find(bson::doc! {})
+            .await
+            .with_context(|| format!("Can't read messages from db {room:?} with col {col:?}"))?;
+
+        let col_size = col.estimated_document_count().await.with_context(|| {
+            format!("Can't get estimated doc count for db {room:?} with col {col:?}")
+        })?;
+        let mut messages = Vec::with_capacity(col_size as usize);
+
+        loop {
+            match msg_cursor.advance().await {
+                Ok(true) => match msg_cursor.deserialize_current() {
+                    Ok(m) => messages.push(m),
+                    Err(_) => debug!("Encountered migration marker"),
+                },
+                Ok(false) => break,
+                Err(e) => {
+                    warn!(?e, "Error while advancing messages");
+                    bail!("Advancing messages failed");
+                }
+            }
+        }
+
+        Ok(messages)
     }
 }
