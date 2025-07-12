@@ -2,7 +2,7 @@
 ///
 /// Get `db_pool` otherwise
 macro_rules! backoff {
-    ($self:expr) => {{
+    ($manager:expr) => {{
         use crate::guard::DbGuard;
         #[allow(unused_imports)]
         use anyhow::{anyhow, bail};
@@ -12,18 +12,18 @@ macro_rules! backoff {
         if DbGuard::is_running(Ordering::SeqCst) {
             bail!(DbErr::Unreachable(anyhow!("Unreachable")));
         }
-        &$self.db_pool
+        &$manager.db_pool
     }};
 }
 
 // Shoutout to the server
 macro_rules! hans {
-    ($self:expr, $e:expr) => {{
+    ($manager:expr, $e:expr) => {{
         use crate::guard::DbGuard;
         #[allow(unused_imports)]
         use matrix_errors::DbErr;
 
-        DbGuard::init(&$self.db_pool);
+        DbGuard::init(&$manager.db_pool);
         DbErr::Unreachable($e)
     }};
 }
