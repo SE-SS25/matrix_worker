@@ -51,7 +51,7 @@ impl DbManager {
             .connect(&db_url)
             .await
             .context("Can't connect to database")
-            .map_err(|e| Unreachable(e))?;
+            .map_err(Unreachable)?;
 
         info!("Connected to database");
 
