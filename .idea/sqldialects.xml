@@ -21,5 +21,7 @@
     <file url="file://$PROJECT_DIR$/migrations/20250620104256_db_migration_status.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620104257_db_migration.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20250620104257_db_migration.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migrations/20250620104259_conn_err_default_pk.down.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migrations/20250620104259_conn_err_default_pk.up.sql" dialect="PostgreSQL" />
   </component>
 </project>

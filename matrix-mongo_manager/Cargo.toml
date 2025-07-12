@@ -7,8 +7,8 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 bson.workspace = true
+either.workspace = true
 mongodb.workspace = true
-parking_lot.workspace = true
 serde.workspace = true
 tokio.workspace = true
 tracing.workspace = true

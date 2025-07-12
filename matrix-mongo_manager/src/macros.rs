@@ -1,16 +1,15 @@
 macro_rules! backoff {
-    ($self:expr) => {{
+    ($manager:expr) => {{
         #[allow(unused_imports)]
         use anyhow::{anyhow, bail};
         use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
 
-        // TODO Write in err db if err
-        if $self.db_has_problem.load(Ordering::SeqCst) {
+        if $manager.db_has_problem.load(Ordering::SeqCst) {
             bail!(MongoErr::Unreachable(anyhow!("Unreachable")));
         }
-        let Some(client) = &*$self.client else {
-            bail!(MongoErr::InvalidUrl($self.db_id.to_string()));
+        let Some(client) = &*$manager.client else {
+            bail!(MongoErr::InvalidUrl($manager.db_id.to_string()));
         };
 
         client
@@ -18,17 +17,21 @@ macro_rules! backoff {
 }
 
 macro_rules! fritz {
-    ($self:expr, $e:expr) => {{
+    ($manager:expr, $e:expr) => {{
         #[allow(unused_imports)]
         use crate::guard::MongoGuard;
+        use ::tracing::warn;
         use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
 
-        if $self.client.is_none() {
-            return MongoErr::InvalidUrl($self.db_id.to_string());
+        if let Err(e) = $manager.tx.try_send($manager.url.clone()) {
+            warn!(?e, "Failed to send id to db_manager");
+        }
+        if $manager.client.is_none() {
+            return MongoErr::InvalidUrl($manager.db_id.to_string());
         };
 
-        $self.db_has_problem.store(true, Ordering::SeqCst);
+        $manager.db_has_problem.store(true, Ordering::SeqCst);
         MongoErr::Unreachable($e)
     }};
 }

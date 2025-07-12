@@ -66,8 +66,6 @@ impl DbManager {
             error!("No regular Mongo instances found");
             exit(1);
         }
-        debug!(mappings = ?new_mappings, "Successfully got Mongo mappings"); // TODO This logs credentials
-
         Ok(new_mappings)
     }
 
@@ -87,16 +85,13 @@ impl DbManager {
         .context("Can't get Mongo mappings")
         .map_err(|e| hans!(self, e))?;
 
-        debug!(mappings = ?new_migration_records, "Successfully got Mongo migration mappings"); // TODO This logs credentials
-
         let new_migration_mappings = new_migration_records
             .into_iter()
-            .filter(|r| r.to.is_some())
             .map(|r| MigrationInstance {
                 id: r.id,
                 url: r.url,
                 from: r.from,
-                to: r.to.unwrap(),
+                to: r.to,
             })
             .collect();
 
@@ -138,7 +133,7 @@ impl DbManager {
             .unique_by(|(url, _)| *url)
             .filter(|(url, _)| !existing_urls.contains(url))
             .map(|(url, id)| async move {
-                let manager = MongoManager::new(url, id).await;
+                let manager = MongoManager::new(url, id, self.tx.clone()).await;
                 (url.to_string(), manager)
             })
             .collect::<Vec<_>>();

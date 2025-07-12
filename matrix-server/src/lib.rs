@@ -1,11 +1,12 @@
+mod messages;
+
 use anyhow::{Context, Result};
 use axum::extract::Request;
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::response::IntoResponse;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Router, ServiceExt};
 use matrix_commons::VERSION;
-use matrix_db_manager::DbManager;
 use matrix_macros::get_env;
 use matrix_metrics::MetricsWrapper;
 use std::sync::atomic::Ordering;
@@ -21,18 +22,13 @@ use tracing::{debug, error, info, instrument};
 #[cfg(unix)]
 const DOCKER_SHUTDOWN_SIG_NUM: i32 = 15;
 
-#[allow(dead_code)] // TODO Remove when in use
-const INTERNAL_ERR_MSG: &str = "Internal Server Error";
-
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // TODO Remove
 struct AppState {
-    db_manager: DbManager,
     metrics: MetricsWrapper,
 }
 
 #[instrument(name = "start server", skip_all)]
-pub async fn start(db_manager: DbManager, metrics: MetricsWrapper) -> Result<()> {
+pub async fn start(metrics: MetricsWrapper) -> Result<()> {
     const ORIGIN_ENV_KEY: &str = "ALLOW_ORIGIN_URL";
     let allow_origin = get_env!(ORIGIN_ENV_KEY);
     debug!(%allow_origin);
@@ -49,16 +45,19 @@ pub async fn start(db_manager: DbManager, metrics: MetricsWrapper) -> Result<()>
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE]);
 
-    let state = AppState {
-        db_manager,
-        metrics,
-    };
+    let state = AppState { metrics };
 
     info!(port, "Starting server");
+
+    let v1_router = Router::new()
+        .route("/addroom", post(messages::create_room))
+        .route("/sendmessage", post(messages::send))
+        .route("/post/{room}", get(messages::read));
 
     let app = Router::new()
         .route("/version", get(version))
         .route("/robots.txt", get(robots))
+        .nest("/v1", v1_router)
         .with_state(state)
         .layer(cors);
 
