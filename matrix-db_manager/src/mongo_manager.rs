@@ -133,7 +133,7 @@ impl DbManager {
             .unique_by(|(url, _)| *url)
             .filter(|(url, _)| !existing_urls.contains(url))
             .map(|(url, id)| async move {
-                let manager = MongoManager::new(url, id).await;
+                let manager = MongoManager::new(url, id, self.tx.clone()).await;
                 (url.to_string(), manager)
             })
             .collect::<Vec<_>>();

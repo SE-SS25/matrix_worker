@@ -20,9 +20,13 @@ macro_rules! fritz {
     ($manager:expr, $e:expr) => {{
         #[allow(unused_imports)]
         use crate::guard::MongoGuard;
+        use ::tracing::warn;
         use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
 
+        if let Err(e) = $manager.tx.blocking_send($manager.url.clone()) {
+            warn!(?e, "Failed to send id to db_manager");
+        }
         if $manager.client.is_none() {
             return MongoErr::InvalidUrl($manager.db_id.to_string());
         };

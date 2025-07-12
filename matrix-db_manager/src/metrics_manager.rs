@@ -27,7 +27,7 @@ impl DbManager {
     async fn persist(&self, metrics: &MetricsWrapper, running_since: Instant) -> Result<()> {
         let db_pool = backoff!(self);
 
-        let id = metrics.id();
+        let id = self.instance_id;
         let last_heartbeat = chrono::Utc::now();
         let uptime = instant_to_interval(running_since);
         let read_per_sec = metrics.read_ps();

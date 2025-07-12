@@ -14,6 +14,7 @@ use serde::Deserialize;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, mpsc};
 use std::time::Duration;
+use tokio::sync::mpsc::Sender;
 use tracing::{debug, error, instrument};
 use uuid::Uuid;
 
@@ -25,6 +26,8 @@ pub struct MongoManager {
     client: ClientWrapper,
     pub db_id: Uuid,
     db_has_problem: Arc<AtomicBool>,
+    url: String,
+    tx: Sender<String>,
     _hook: MongoHookT,
 }
 
@@ -36,7 +39,7 @@ struct User {
 
 impl MongoManager {
     #[instrument]
-    pub async fn new(url: &str, id: Uuid) -> Self {
+    pub async fn new(url: &str, id: Uuid, err_tx: Sender<String>) -> Self {
         debug!("Connecting to mongo");
         let (tx, rx) = mpsc::channel();
         let db_has_problem = Arc::new(AtomicBool::new(false));
@@ -44,6 +47,8 @@ impl MongoManager {
             client: Arc::new(None),
             db_id: id,
             db_has_problem: db_has_problem.clone(),
+            url: url.to_string(),
+            tx: err_tx,
             _hook: Arc::new(MongoHook::new(tx)),
         };
 

@@ -4,7 +4,6 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tracing::{debug, instrument, trace, warn};
-use uuid::Uuid;
 
 pub type MetricsWrapper = Arc<Metrics>;
 type MetricStore = RwLock<VecDeque<Instant>>;
@@ -25,7 +24,6 @@ const METRIC_TTL: Duration = Duration::from_secs(METRIC_TTL_SECS);
 
 #[derive(Debug)]
 pub struct Metrics {
-    id: Uuid,
     reads: MetricStore,
     writes: MetricStore,
     total_requests: AtomicU64,
@@ -38,7 +36,6 @@ impl Metrics {
         debug!("Creating MetricsWrapper");
 
         let metrics = Self {
-            id: Uuid::new_v4(),
             reads: Default::default(),
             writes: Default::default(),
             total_requests: Default::default(),
@@ -47,10 +44,6 @@ impl Metrics {
         trace!(?metrics);
 
         Arc::new(metrics)
-    }
-
-    pub fn id(&self) -> Uuid {
-        self.id
     }
 
     pub fn read(&self) {

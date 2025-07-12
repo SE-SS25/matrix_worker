@@ -1,5 +1,6 @@
 #[macro_use]
 mod macros;
+mod err_handling;
 pub mod guard;
 pub mod metrics_manager;
 mod mongo_manager;
@@ -13,6 +14,7 @@ use sqlx::types::chrono;
 use sqlx::{Postgres, migrate, query};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
+use tokio::sync::mpsc::{self, Sender};
 use tracing::{debug, info, instrument};
 use uuid::Uuid;
 
@@ -27,7 +29,9 @@ static LOADED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone, Debug)]
 pub struct DbManager {
+    instance_id: Uuid,
     db_pool: DbPool,
+    tx: Sender<String>,
 }
 
 impl DbManager {
@@ -55,7 +59,18 @@ impl DbManager {
 
         info!("Connected to database");
 
-        let manager = DbManager { db_pool };
+        let (tx, rx) = mpsc::channel(128);
+
+        let manager = DbManager {
+            instance_id: Uuid::new_v4(),
+            db_pool,
+            tx,
+        };
+
+        {
+            let manager = manager.clone();
+            tokio::spawn(manager.monitor_errs(rx));
+        }
 
         Ok(manager)
     }
