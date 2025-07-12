@@ -1,5 +1,6 @@
+use crate::AppState;
 use axum::Json;
-use axum::extract::{Path, Query};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use bson::DateTime;
@@ -33,7 +34,10 @@ pub(crate) struct ReadMessage {
 }
 
 #[instrument(skip_all, fields(room))]
-pub(crate) async fn create_room(Json(config): Json<RoomConfig>) -> impl IntoResponse {
+pub(crate) async fn create_room(
+    State(state): State<AppState>,
+    Json(config): Json<RoomConfig>,
+) -> impl IntoResponse {
     Span::current().record("room", &config.name);
 
     match matrix_mongo_manager::MongoManager::add_room(
@@ -44,8 +48,12 @@ pub(crate) async fn create_room(Json(config): Json<RoomConfig>) -> impl IntoResp
     )
     .await
     {
-        Ok(name) => (StatusCode::CREATED, format!("Created room {name:?}")),
+        Ok(name) => {
+            state.metrics.write();
+            (StatusCode::CREATED, format!("Created room {name:?}"))
+        }
         Err(e) => {
+            state.metrics.fail();
             warn!(?e, "Failed to add room");
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         }
@@ -53,7 +61,10 @@ pub(crate) async fn create_room(Json(config): Json<RoomConfig>) -> impl IntoResp
 }
 
 #[instrument(skip_all, fields(user, room, msg))]
-pub(crate) async fn send(Json(payload): Json<SendMessage>) -> impl IntoResponse {
+pub(crate) async fn send(
+    State(state): State<AppState>,
+    Json(payload): Json<SendMessage>,
+) -> impl IntoResponse {
     Span::current().record("user", &payload.user);
     Span::current().record("room", &payload.room);
     // Span::current().record("msg", &payload.msg); // CONSIDER Remove, can/will be big
@@ -68,15 +79,18 @@ pub(crate) async fn send(Json(payload): Json<SendMessage>) -> impl IntoResponse 
     )
     .await
     {
+        state.metrics.fail();
         warn!(?e, "Failed to post message");
         return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string());
     };
+    state.metrics.write();
 
     (StatusCode::CREATED, "Successfully posted".to_string())
 }
 
 #[instrument]
 pub(crate) async fn read(
+    State(state): State<AppState>,
     Path(room): Path<String>,
     Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
@@ -96,6 +110,7 @@ pub(crate) async fn read(
 
     match matrix_mongo_manager::MongoManager::read_messages(&room, n).await {
         Ok((messages, col_cnt)) => {
+            state.metrics.read();
             let msg_len = messages.len();
             let resp = ReadMessage {
                 messages,
@@ -111,6 +126,7 @@ pub(crate) async fn read(
             }
         }
         Err(e) => {
+            state.metrics.fail();
             warn!(?e, "Failed to get messages");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,

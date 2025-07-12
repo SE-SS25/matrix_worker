@@ -26,7 +26,6 @@ const DOCKER_SHUTDOWN_SIG_NUM: i32 = 15;
 const INTERNAL_ERR_MSG: &str = "Internal Server Error";
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // TODO Remove
 struct AppState {
     metrics: MetricsWrapper,
 }

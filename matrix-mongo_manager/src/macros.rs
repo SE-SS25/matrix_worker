@@ -5,7 +5,6 @@ macro_rules! backoff {
         use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
 
-        // TODO Write in err db if err
         if $self.db_has_problem.load(Ordering::SeqCst) {
             bail!(MongoErr::Unreachable(anyhow!("Unreachable")));
         }
