@@ -24,7 +24,7 @@ macro_rules! fritz {
         use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
 
-        if let Err(e) = $manager.tx.blocking_send($manager.url.clone()) {
+        if let Err(e) = $manager.tx.try_send($manager.url.clone()) {
             warn!(?e, "Failed to send id to db_manager");
         }
         if $manager.client.is_none() {
