@@ -188,7 +188,6 @@ impl MongoManager {
                         .context("Can't execute get call for collection")?
                         .context("Name of collection is not set")?;
                     let name = name.as_str().unwrap_or("").to_string();
-                    warn!(?name);
                     if !name.starts_with(CHAT_PREFIX) {
                         error!(name, "Invalid collection name found");
                         bail!("Internal server error");
@@ -210,7 +209,6 @@ impl MongoManager {
             };
         }
         names.sort_unstable();
-        error!(?names);
         if names.is_empty() {
             Ok(Err(MatrixErr::RoomNotFound(room.to_string())))
         } else {
