@@ -79,7 +79,6 @@ impl MongoManager {
     }
 
     #[instrument(skip_all)]
-    #[allow(unused_variables)]
     pub async fn read_messages(room: &str, n: usize) -> Result<(Vec<Message>, u32)> {
         let (messages, cnt) = match mappings::read_manager(&room).await {
             Ok(either::Left(manager)) => manager
@@ -87,7 +86,22 @@ impl MongoManager {
                 .await
                 .context(INTERNAL_ERR_MSG)
                 .map_err(|e| fritz!(manager, e))??,
-            Ok(either::Right((man, mig_m))) => todo!(),
+            Ok(either::Right((man, mig_m))) => {
+                // Not the optimal approach, but the only one that guarantees that no messages are lost
+                let (res, mig_res) = tokio::join!(man.read_n(&room, n), mig_m.read_n(&room, n),);
+                let (mut messages, collections_read) = res
+                    .context("Failed to read from manager")
+                    .context(INTERNAL_ERR_MSG) // First context internal, second for return val
+                    .map_err(|e| fritz!(man, e))??;
+                let (migration_messages, mig_collections_read) = mig_res
+                    .context("Failed to read from migration manager")
+                    .context(INTERNAL_ERR_MSG)
+                    .map_err(|e| fritz!(mig_m, e))??;
+
+                messages.extend(migration_messages);
+
+                (messages, collections_read.max(mig_collections_read))
+            }
             Err(e) => {
                 warn!(?e, "Failed to get migration manager");
                 bail!(INTERNAL_ERR_MSG);
