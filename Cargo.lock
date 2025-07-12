@@ -1347,14 +1347,14 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
 name = "matrix-commons"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "rand 0.9.1",
 ]
 
 [[package]]
 name = "matrix-db_manager"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "futures",
@@ -1372,7 +1372,7 @@ dependencies = [
 
 [[package]]
 name = "matrix-errors"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "thiserror 2.0.12",
@@ -1380,14 +1380,14 @@ dependencies = [
 
 [[package]]
 name = "matrix-macros"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "tracing",
 ]
 
 [[package]]
 name = "matrix-metrics"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "parking_lot",
  "tracing",
@@ -1396,7 +1396,7 @@ dependencies = [
 
 [[package]]
 name = "matrix-mongo_manager"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bson",
@@ -1412,7 +1412,7 @@ dependencies = [
 
 [[package]]
 name = "matrix-server"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -1433,7 +1433,7 @@ dependencies = [
 
 [[package]]
 name = "matrix_worker"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "dotenvy",
