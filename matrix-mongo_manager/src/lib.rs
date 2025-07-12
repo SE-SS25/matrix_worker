@@ -51,7 +51,6 @@ impl MongoManager {
             Ok(opts) => opts,
             Err(e) => {
                 error!(?e, "Unable to create mongo client options");
-                // TODO Write to error db
                 return manager;
             }
         };
@@ -72,7 +71,6 @@ impl MongoManager {
             }
             Err(e) => {
                 error!(?e, "Unable to create mongo client");
-                // TODO Write to error db
                 manager
             }
         }

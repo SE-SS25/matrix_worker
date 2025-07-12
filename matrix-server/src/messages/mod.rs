@@ -60,14 +60,13 @@ pub(crate) async fn create_room(
     }
 }
 
-#[instrument(skip_all, fields(user, room, msg))]
+#[instrument(skip_all, fields(user, room))]
 pub(crate) async fn send(
     State(state): State<AppState>,
     Json(payload): Json<SendMessage>,
 ) -> impl IntoResponse {
     Span::current().record("user", &payload.user);
     Span::current().record("room", &payload.room);
-    // Span::current().record("msg", &payload.msg); // CONSIDER Remove, can/will be big
 
     if let Err(e) = matrix_mongo_manager::MongoManager::write_message(
         &payload.room,

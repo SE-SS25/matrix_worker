@@ -66,8 +66,6 @@ impl DbManager {
             error!("No regular Mongo instances found");
             exit(1);
         }
-        debug!(mappings = ?new_mappings, "Successfully got Mongo mappings"); // TODO This logs credentials
-
         Ok(new_mappings)
     }
 
@@ -86,8 +84,6 @@ impl DbManager {
         .await
         .context("Can't get Mongo mappings")
         .map_err(|e| hans!(self, e))?;
-
-        debug!(mappings = ?new_migration_records, "Successfully got Mongo migration mappings"); // TODO This logs credentials
 
         let new_migration_mappings = new_migration_records
             .into_iter()
