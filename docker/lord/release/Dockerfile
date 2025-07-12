@@ -12,6 +12,7 @@ COPY . .
 RUN cargo build --release
 
 FROM debian:bookworm-slim
+LABEL org.opencontainers.image.source=https://github.com/SE-SS25/matrix_worker
 RUN apt update
 RUN apt install curl -y
 COPY --from=builder /app/target/debug/matrix_worker /usr/local/bin/matrix_worker
