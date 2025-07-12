@@ -87,7 +87,7 @@ pub(crate) async fn send(
     (StatusCode::CREATED, "Successfully posted".to_string())
 }
 
-#[instrument]
+#[instrument(skip(state))]
 pub(crate) async fn read(
     State(state): State<AppState>,
     Path(room): Path<String>,
