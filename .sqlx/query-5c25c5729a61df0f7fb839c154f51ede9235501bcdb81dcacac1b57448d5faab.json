@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO db_conn_err (worker_id, db_url, fail_time)\n                    VALUES ($1, $2, NOW());\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c25c5729a61df0f7fb839c154f51ede9235501bcdb81dcacac1b57448d5faab"
+}
