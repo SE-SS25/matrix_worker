@@ -4,7 +4,7 @@ use either::Either;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 use tokio::sync::{RwLock, RwLockReadGuard};
-use tracing::{debug, instrument};
+use tracing::{debug, debug_span, instrument};
 use uuid::Uuid;
 
 // TODO Make private (should be pretty easy, as we only need it public to update and we can migrate that logic)
@@ -134,12 +134,27 @@ fn get_manager_for_instance(
         bail!("No Mongo instance available");
     }
 
-    let instance = guard
-        .instances
-        .iter()
-        .rev()
-        .find(|inst| inst.from.as_str() <= namespace)
-        .ok_or_else(|| anyhow!("No matching instance found for namespace"))?;
+    let mut instance = None;
+    for (idx, iter_instance) in guard.instances.iter().enumerate() {
+        let span = debug_span!("Instance", iter_instance.from);
+        let _guard = span.enter();
+
+        let from_bigger_namespace = iter_instance.from.as_str() > namespace;
+        debug!(from_bigger_namespace, "Checking");
+        if !from_bigger_namespace {
+            continue;
+        }
+
+        if idx == 0 {
+            bail!("First instance is bigger than namespace (should not be possible)");
+        }
+
+        instance = Some(&guard.instances[idx - 1]);
+        break;
+    }
+
+    // Unwrap because instances can't be empty
+    let instance = instance.unwrap_or(&guard.instances.last().unwrap());
     debug!(?instance, "Found instance");
 
     let manager = guard
