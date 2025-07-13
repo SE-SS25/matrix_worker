@@ -1,6 +1,7 @@
 macro_rules! backoff {
     ($manager:expr) => {{
         #[allow(unused_imports)]
+        use ::tracing::warn;
         use anyhow::{anyhow, bail};
         use core::sync::atomic::Ordering;
         use matrix_errors::MongoErr;
@@ -9,6 +10,9 @@ macro_rules! backoff {
             bail!(MongoErr::Unreachable(anyhow!("Unreachable")));
         }
         let Some(client) = &*$manager.client else {
+            if let Err(e) = $manager.tx.try_send($manager.url.clone()) {
+                warn!(?e, "Failed to send url to db_manager");
+            }
             bail!(MongoErr::InvalidUrl($manager.db_id.to_string()));
         };
 
@@ -25,7 +29,7 @@ macro_rules! fritz {
         use matrix_errors::MongoErr;
 
         if let Err(e) = $manager.tx.try_send($manager.url.clone()) {
-            warn!(?e, "Failed to send id to db_manager");
+            warn!(?e, "Failed to send url to db_manager");
         }
         if $manager.client.is_none() {
             return MongoErr::InvalidUrl($manager.db_id.to_string());
