@@ -10,7 +10,7 @@ use tracing::{debug, error, info, instrument, trace, warn};
 const INTERNAL_ERR_MSG: &str = "Internal server error";
 const INVALID_ROOM_NAMES: &[&str] = &["admin", "config", "local"];
 const CHAT_PREFIX: &str = "chat";
-const MAX_MSGS_PER_COL: u64 = 3;
+const MAX_MSGS_PER_COL: u64 = 100;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RoomConfig {
