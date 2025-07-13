@@ -71,13 +71,11 @@ impl MongoGuard {
     /// Returns true if instance is down, false otherwise
     #[instrument(skip_all)]
     async fn handle_problem(&mut self) -> bool {
-        let mut backoff = matrix_commons::DEFAULT_BACKOFF;
+        let mut backoff_millis = matrix_commons::DEFAULT_BACKOFF;
+        let mut sleep_dur = Duration::from_millis(backoff_millis);
         loop {
-            warn!(
-                "Mongo is down, backing off for {ms}ms",
-                ms = backoff.as_millis()
-            );
-            sleep(backoff).await;
+            warn!("Mongo is down, backing off for {ms}ms", ms = backoff_millis);
+            sleep(sleep_dur).await;
             if self.rx.try_recv().is_ok() {
                 debug!("Manager is down, returning");
                 return true;
@@ -85,7 +83,7 @@ impl MongoGuard {
             if self.check_conn().await.is_ok() {
                 return false;
             }
-            backoff = matrix_commons::jitter(backoff);
+            (backoff_millis, sleep_dur) = matrix_commons::jitter(backoff_millis);
         }
     }
 

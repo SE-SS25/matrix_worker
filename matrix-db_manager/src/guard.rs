@@ -35,18 +35,16 @@ impl DbGuard {
 
     #[instrument(skip_all)]
     async fn run(self) {
-        let mut backoff = matrix_commons::DEFAULT_BACKOFF;
+        let mut backoff_millis = matrix_commons::DEFAULT_BACKOFF;
+        let mut sleep_dur = std::time::Duration::from_millis(backoff_millis);
         loop {
-            warn!(
-                "DB is down, backing off for {ms}ms",
-                ms = backoff.as_millis()
-            );
-            sleep(backoff).await;
+            warn!("DB is down, backing off for {ms}ms", ms = backoff_millis);
+            sleep(sleep_dur).await;
             if self.check_conn().await.is_ok() {
                 info!("DB is alive again");
                 return;
             };
-            backoff = matrix_commons::jitter(backoff);
+            (backoff_millis, sleep_dur) = matrix_commons::jitter(backoff_millis);
         }
     }
 
