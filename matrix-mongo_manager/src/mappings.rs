@@ -48,6 +48,7 @@ pub struct MigrationInstance {
 #[instrument]
 pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
     let guard = MONGO_MAPPINGS_MANAGER.read().await;
+    debug!(instances = ?guard.instances);
 
     if let Some(manager) = guard
         .migration_instances
@@ -56,6 +57,7 @@ pub(super) async fn write_manager(namespace: &str) -> Result<MongoManager> {
         .and_then(|m| guard.managers.get(&m.url))
     // NOTE Not sure how much I like it, technically it should be impossible to not find one, but still...
     {
+        debug!(?manager, "Found migration manager");
         return Ok(manager.clone());
     }
 
@@ -86,6 +88,7 @@ pub(super) async fn read_manager(
     namespace: &str,
 ) -> Result<Either<MongoManager, (MongoManager, MongoManager)>> {
     let guard = MONGO_MAPPINGS_MANAGER.read().await;
+    debug!(instances = ?guard.instances);
 
     let migration_manager = guard
         .migration_instances
@@ -133,16 +136,19 @@ fn get_manager_for_instance(
 
     let instance = guard
         .instances
-        .windows(2)
-        .find(|w| *w[1].url > *namespace)
-        .map(|w| &w[0])
-        .unwrap_or(&guard.instances.last().unwrap());
+        .iter()
+        .rev()
+        .find(|inst| inst.from.as_str() <= namespace)
+        .ok_or_else(|| anyhow!("No matching instance found for namespace"))?;
+    debug!(?instance, "Found instance");
 
     let manager = guard
         .managers
         .get(&instance.url)
         .ok_or_else(|| anyhow!("No instance for url (this should not be possible)"))
         .map(|m| m.clone())?;
+
+    debug!(?manager, "Found manager");
 
     Ok(manager)
 }
