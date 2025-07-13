@@ -2,6 +2,7 @@ use crate::DbPool;
 use anyhow::Result;
 use sqlx::Connection;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 use tokio::time::sleep;
 use tracing::{debug, info, instrument, warn};
 
@@ -36,9 +37,9 @@ impl DbGuard {
     #[instrument(skip_all)]
     async fn run(self) {
         let mut backoff_millis = matrix_commons::DEFAULT_BACKOFF;
-        let mut sleep_dur = std::time::Duration::from_millis(backoff_millis);
+        let mut sleep_dur = Duration::from_millis(backoff_millis);
         loop {
-            warn!("DB is down, backing off for {ms}ms", ms = backoff_millis);
+            warn!("DB is down, backing off for {backoff_millis}ms");
             sleep(sleep_dur).await;
             if self.check_conn().await.is_ok() {
                 info!("DB is alive again");

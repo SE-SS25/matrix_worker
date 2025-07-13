@@ -74,7 +74,7 @@ impl MongoGuard {
         let mut backoff_millis = matrix_commons::DEFAULT_BACKOFF;
         let mut sleep_dur = Duration::from_millis(backoff_millis);
         loop {
-            warn!("Mongo is down, backing off for {ms}ms", ms = backoff_millis);
+            warn!("Mongo is down, backing off for {backoff_millis}ms");
             sleep(sleep_dur).await;
             if self.rx.try_recv().is_ok() {
                 debug!("Manager is down, returning");
